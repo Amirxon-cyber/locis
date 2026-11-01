@@ -18,7 +18,7 @@
         { id: "RF-312", plate: "М544ХС 799", driver: "Олег Смирнов", from: "Тверь", to: "Москва", location: "Солнечногорск, М-10", status: "moving", eta: "12:20", progress: 81, x: 32, y: 31 },
         { id: "RF-156", plate: "Р661УН 77", driver: "Максим Орлов", from: "Москва", to: "Нижний Новгород", location: "Владимирская обл., М-7", status: "moving", eta: "15:05", progress: 39, x: 47, y: 62 }
     ];
-    const statusLabels = { moving: "В пути", delayed: "Задержка", stopped: "Стоянка", delivered: "Доставлен" };
+    const statusLabels = { moving: "В пути", delayed: "Задержка", stopped: "Стоянка", delivered: "Доставлен", cancelled: "Отменён" };
     const starterDrivers = [
         { id: "DR-101", name: "Сергей Козлов", phone: "+7 916 234-18-07", license: "Водитель категории Е", status: "На маршруте" },
         { id: "DR-102", name: "Андрей Морозов", phone: "+7 903 512-40-26", license: "Водитель категории Е", status: "На маршруте" },
@@ -56,6 +56,9 @@
     let currentPage = "overview";
     let currentRecordType = "";
     let editingRecordId = null;
+    let activeTripFilter = "active";
+    let tripDateFrom = "";
+    let tripDateTo = "";
 
     function loadCollection(key, defaults, validate) {
         try {
@@ -71,6 +74,28 @@
         }
     }
 
+    function applyTripFilters() {
+        byId("workspacePage").querySelectorAll("[data-trip-filter]").forEach((button) => {
+            button.classList.toggle("active", button.dataset.tripFilter === activeTripFilter);
+        });
+        const query = byId("pageSearch")?.value.trim().toLocaleLowerCase("ru") || "";
+        byId("tripsTableBody")?.querySelectorAll("tr[data-status]").forEach((row) => {
+            const status = row.dataset.status;
+            const date = row.dataset.date;
+            const statusMatches = activeTripFilter === "all"
+                || (activeTripFilter === "active" && ["moving", "delayed"].includes(status))
+                || (activeTripFilter === "delayed" && status === "delayed")
+                || (activeTripFilter === "delivered" && status === "delivered")
+                || (activeTripFilter === "cancelled" && status === "cancelled");
+            const dateMatches = (!tripDateFrom || date >= tripDateFrom) && (!tripDateTo || date <= tripDateTo);
+            const searchMatches = !query || row.textContent.toLocaleLowerCase("ru").includes(query);
+            row.hidden = !(statusMatches && dateMatches && searchMatches);
+        });
+        const hasVisibleTrips = [...(byId("tripsTableBody")?.querySelectorAll("tr[data-status]") || [])].some((row) => !row.hidden);
+        const noResults = byId("tripNoResults");
+        if (noResults) noResults.hidden = hasVisibleTrips || trucks.length === 0;
+    }
+
     function saveCollection(key, records, defaults) {
         try {
             localStorage.setItem(key, JSON.stringify(records));
@@ -83,23 +108,32 @@
     function loadTrucks() {
         try {
             const saved = localStorage.getItem(storageKeys.trucks);
-            if (!saved) return starterTrucks.map((truck) => ({ ...truck }));
+            if (!saved) return normalizeTrucks(starterTrucks);
             const parsed = JSON.parse(saved);
             if (!Array.isArray(parsed) || !parsed.every(isValidTruck)) {
                 throw new Error("Сохранённые демо-рейсы имеют неверный формат.");
             }
             const isLegacyCustomOnly = parsed.length > 0 && parsed.every((truck) => !starterTrucks.some((starter) => starter.id === truck.id));
-            return isLegacyCustomOnly ? [...parsed, ...starterTrucks.map((truck) => ({ ...truck }))] : parsed;
+            const records = isLegacyCustomOnly ? [...parsed, ...starterTrucks.map((truck) => ({ ...truck }))] : parsed;
+            return normalizeTrucks(records);
         } catch (error) {
             console.error("Не удалось загрузить сохранённые рейсы.", error);
-            return starterTrucks.map((truck) => ({ ...truck }));
+            return normalizeTrucks(starterTrucks);
         }
+    }
+
+    function normalizeTrucks(records) {
+        const fallbackCreatedAt = Date.now();
+        return records.map((truck) => ({
+            ...truck,
+            createdAt: Number.isFinite(truck.createdAt) ? truck.createdAt : fallbackCreatedAt
+        }));
     }
 
     function isValidTruck(item) {
         return item && typeof item === "object"
             && ["id", "plate", "driver", "from", "to", "location", "status", "eta"].every((key) => typeof item[key] === "string")
-            && ["moving", "delayed", "stopped", "delivered"].includes(item.status)
+            && ["moving", "delayed", "stopped", "delivered", "cancelled"].includes(item.status)
             && Number.isFinite(item.progress) && Number.isFinite(item.x) && Number.isFinite(item.y);
     }
 
@@ -215,7 +249,14 @@
 
     function renderRoutes() {
         routesTableBody.replaceChildren();
-        trucks.filter((truck) => truck.status !== "stopped").slice(0, 4).forEach((truck) => {
+        const activeRoutes = trucks.filter((truck) => !["stopped", "delivered", "cancelled"].includes(truck.status)).slice(0, 4);
+        if (activeRoutes.length === 0) {
+            const row = document.createElement("tr");
+            row.innerHTML = '<td colspan="4" class="table-empty"><span>Активных рейсов пока нет.</span><button class="empty-create-button" type="button">Создать первый рейс</button></td>';
+            row.querySelector("button").addEventListener("click", openTripModal);
+            routesTableBody.append(row);
+        }
+        activeRoutes.forEach((truck) => {
             const row = document.createElement("tr");
             const vehicleCell = document.createElement("td");
             const vehicle = document.createElement("div");
@@ -267,7 +308,7 @@
             row.append(vehicleCell, destinationCell, etaCell, progressCell);
             routesTableBody.append(row);
         });
-        byId("navRouteCount").textContent = trucks.filter((truck) => truck.status !== "stopped").length;
+        byId("navRouteCount").textContent = trucks.filter((truck) => !["stopped", "delivered", "cancelled"].includes(truck.status)).length;
     }
 
     function updateFilterCounts() {
@@ -307,6 +348,13 @@
 
     function currency(value) {
         return new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }).format(value);
+    }
+
+    function formatDateInput(timestamp) {
+        const date = new Date(timestamp);
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${date.getFullYear()}-${month}-${day}`;
     }
 
     function relativeTime(timestamp) {
@@ -392,7 +440,7 @@
     }
 
     function renderFleetPage() {
-        const rows = trucks.map((truck) => `<tr>
+        const rows = trucks.map((truck) => `<tr data-status="${escapeHTML(truck.status)}" data-date="${formatDateInput(truck.createdAt)}">
             <td><strong>${escapeHTML(truck.id)}</strong><small>${escapeHTML(truck.plate)}</small></td>
             <td>${escapeHTML(truck.driver)}</td><td>${escapeHTML(truck.from)} → ${escapeHTML(truck.to)}</td>
             <td><span class="table-status ${escapeHTML(truck.status)}">${escapeHTML(statusLabels[truck.status])}</span></td>
@@ -405,22 +453,22 @@
     }
 
     function renderTripsPage() {
-        const rows = trucks.map((truck) => `<tr>
+        const rows = trucks.map((truck) => `<tr data-status="${escapeHTML(truck.status)}" data-date="${new Date(truck.createdAt).toISOString().slice(0, 10)}">
             <td><strong>${escapeHTML(truck.id)}</strong><small>${escapeHTML(truck.plate)}</small></td>
             <td><span class="route-city">${escapeHTML(truck.from)} <b>→</b> ${escapeHTML(truck.to)}</span><small>${escapeHTML(truck.location)}</small></td>
             <td>${escapeHTML(truck.driver)}</td><td>${escapeHTML(truck.eta)}</td>
             <td><div class="table-progress"><span><i style="width:${Math.max(0, Math.min(100, truck.progress))}%"></i></span>${truck.progress}%</div></td>
             <td><span class="table-status ${escapeHTML(truck.status)}">${escapeHTML(statusLabels[truck.status])}</span></td>
-            <td><button class="table-action" data-action="edit-truck" data-id="${escapeHTML(truck.id)}">Открыть</button>${truck.status === "delivered" || truck.status === "stopped" ? "" : `<button class="table-action success" data-action="complete-trip" data-id="${escapeHTML(truck.id)}">Доставлен</button>`}</td>
+            <td><button class="table-action" data-action="edit-truck" data-id="${escapeHTML(truck.id)}">Открыть</button>${truck.status === "moving" || truck.status === "delayed" ? `<button class="table-action success" data-action="complete-trip" data-id="${escapeHTML(truck.id)}">Доставлен</button><button class="table-action danger" data-action="cancel-trip" data-id="${escapeHTML(truck.id)}">Отменить</button>` : ""}</td>
         </tr>`).join("");
         return `${makePageHeader("Рейсы", "Планируйте перевозки и следите за выполнением заказов.", "Создать рейс", "add-trip")}
-          <div class="page-toolbar"><div class="segmented-control"><button class="segment active" data-trip-filter="active">Активные</button><button class="segment" data-trip-filter="all">Все рейсы</button><button class="segment" data-trip-filter="delayed">Задержки</button><button class="segment" data-trip-filter="delivered">Доставлены</button></div><button class="button button-outline" data-action="export-trips">↓ Экспорт CSV</button></div>
-          <div class="panel data-panel"><div class="responsive-table"><table class="data-table"><thead><tr><th>РЕЙС</th><th>МАРШРУТ И ПОЗИЦИЯ</th><th>ВОДИТЕЛЬ</th><th>ПРИБЫТИЕ</th><th>ПРОГРЕСС</th><th>СТАТУС</th><th></th></tr></thead><tbody id="tripsTableBody">${rows || `<tr><td colspan="7" class="table-empty">Рейсов нет. Создайте первый рейс.</td></tr>`}</tbody></table></div></div>`;
+          <div class="page-toolbar"><div class="segmented-control"><button class="segment ${activeTripFilter === "active" ? "active" : ""}" data-trip-filter="active">Активные</button><button class="segment ${activeTripFilter === "all" ? "active" : ""}" data-trip-filter="all">Все рейсы</button><button class="segment ${activeTripFilter === "delayed" ? "active" : ""}" data-trip-filter="delayed">Задержки</button><button class="segment ${activeTripFilter === "delivered" ? "active" : ""}" data-trip-filter="delivered">Доставлены</button><button class="segment ${activeTripFilter === "cancelled" ? "active" : ""}" data-trip-filter="cancelled">Отменены</button></div><div class="date-filter"><label>С <input type="date" id="tripDateFrom" value="${escapeHTML(tripDateFrom)}" aria-label="Рейсы с даты"></label><label>По <input type="date" id="tripDateTo" value="${escapeHTML(tripDateTo)}" aria-label="Рейсы по дату"></label></div><button class="button button-outline" data-action="export-trips">↓ Экспорт CSV</button></div>
+          <div class="panel data-panel"><div class="responsive-table"><table class="data-table"><thead><tr><th>РЕЙС</th><th>МАРШРУТ И ПОЗИЦИЯ</th><th>ВОДИТЕЛЬ</th><th>ПРИБЫТИЕ</th><th>ПРОГРЕСС</th><th>СТАТУС</th><th></th></tr></thead><tbody id="tripsTableBody">${rows || `<tr><td colspan="7" class="table-empty">Рейсов пока нет. Создайте первый — он появится здесь.</td></tr>`}<tr id="tripNoResults" hidden><td colspan="7" class="table-empty">Нет рейсов по выбранным условиям. Измените фильтры или период.</td></tr></tbody></table></div></div>`;
     }
 
     function renderDriversPage() {
         const cards = drivers.map((driver) => {
-            const assigned = trucks.find((truck) => truck.driver === driver.name && truck.status !== "delivered");
+            const assigned = trucks.find((truck) => truck.driver === driver.name && ["moving", "delayed"].includes(truck.status));
             const initials = driver.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toLocaleUpperCase("ru");
             return `<article class="person-card"><div class="person-card-top"><span class="person-avatar">${escapeHTML(initials)}</span><span class="person-status ${assigned ? "on-route" : ""}">${assigned ? "На маршруте" : escapeHTML(driver.status)}</span></div><h3>${escapeHTML(driver.name)}</h3><p>${escapeHTML(driver.license)}</p><div class="person-detail"><span>Телефон</span><strong>${escapeHTML(driver.phone)}</strong></div><div class="person-detail"><span>Текущий рейс</span><strong>${assigned ? escapeHTML(assigned.id) + " · " + escapeHTML(assigned.to) : "Свободен"}</strong></div><div class="person-actions"><button data-action="edit-driver" data-id="${escapeHTML(driver.id)}">Изменить</button><button data-action="delete-driver" data-id="${escapeHTML(driver.id)}">Удалить</button></div></article>`;
         }).join("");
@@ -441,18 +489,23 @@
             { label: "В пути", amount: trucks.filter((truck) => truck.status === "moving").length, className: "moving" },
             { label: "Задержка", amount: trucks.filter((truck) => truck.status === "delayed").length, className: "delayed" },
             { label: "Стоянка", amount: trucks.filter((truck) => truck.status === "stopped").length, className: "stopped" },
-            { label: "Доставлено", amount: trucks.filter((truck) => truck.status === "delivered").length + 18, className: "delivered" }
+            { label: "Доставлено", amount: trucks.filter((truck) => truck.status === "delivered").length + 18, className: "delivered" },
+            { label: "Отменено", amount: trucks.filter((truck) => truck.status === "cancelled").length, className: "cancelled" }
         ];
         const max = Math.max(1, ...statuses.map((status) => status.amount));
         const bars = statuses.map((status) => `<div class="chart-column"><div class="chart-column-value">${status.amount}</div><div class="chart-column-track"><i class="${status.className}" style="height:${Math.max(8, status.amount / max * 100)}%"></i></div><span>${status.label}</span></div>`).join("");
-        const routes = trucks.filter((truck) => truck.status !== "stopped").slice(0, 5).map((truck) => `<div class="analytics-route"><span><strong>${escapeHTML(truck.from)} → ${escapeHTML(truck.to)}</strong><small>${escapeHTML(truck.id)} · ${escapeHTML(truck.driver)}</small></span><b>${truck.progress}%</b></div>`).join("");
+        const routes = trucks.filter((truck) => ["moving", "delayed"].includes(truck.status)).slice(0, 5).map((truck) => `<div class="analytics-route"><span><strong>${escapeHTML(truck.from)} → ${escapeHTML(truck.to)}</strong><small>${escapeHTML(truck.id)} · ${escapeHTML(truck.driver)}</small></span><b>${truck.progress}%</b></div>`).join("");
+        const reportableTrucks = trucks.filter((truck) => truck.status !== "cancelled");
+        const onTimeRate = reportableTrucks.length
+            ? Math.round((reportableTrucks.length - reportableTrucks.filter((truck) => truck.status === "delayed").length) / reportableTrucks.length * 100)
+            : 0;
         return `${makePageHeader("Аналитика", "Ключевые показатели автопарка и выполнения доставок.")}
-          <div class="analytics-cards"><article class="analytics-kpi"><span>Активных рейсов</span><strong>${trucks.filter((truck) => truck.status === "moving" || truck.status === "delayed").length}</strong><small>Сейчас на маршрутах</small></article><article class="analytics-kpi"><span>Доля доставок вовремя</span><strong>${trucks.length ? Math.round((trucks.length - trucks.filter((truck) => truck.status === "delayed").length) / trucks.length * 100) : 0}%</strong><small>По текущим статусам</small></article><article class="analytics-kpi"><span>Средний прогресс</span><strong>${trucks.length ? Math.round(trucks.reduce((sum, truck) => sum + truck.progress, 0) / trucks.length) : 0}%</strong><small>По активным рейсам</small></article></div>
+          <div class="analytics-cards"><article class="analytics-kpi"><span>Активных рейсов</span><strong>${trucks.filter((truck) => truck.status === "moving" || truck.status === "delayed").length}</strong><small>Сейчас на маршрутах</small></article><article class="analytics-kpi"><span>Доля доставок вовремя</span><strong>${onTimeRate}%</strong><small>По текущим статусам</small></article><article class="analytics-kpi"><span>Средний прогресс</span><strong>${trucks.length ? Math.round(trucks.reduce((sum, truck) => sum + truck.progress, 0) / trucks.length) : 0}%</strong><small>По активным рейсам</small></article></div>
           <div class="analytics-grid"><article class="panel chart-panel"><div class="data-panel-head"><div><h2>Статус перевозок</h2><p>Распределение машин автопарка</p></div><span class="table-total">СЕЙЧАС</span></div><div class="bar-chart">${bars}</div></article><article class="panel chart-panel"><div class="data-panel-head"><div><h2>Выполнение рейсов</h2><p>Прогресс активных доставок</p></div></div><div class="analytics-routes">${routes || `<p class="table-empty">Нет активных рейсов.</p>`}</div></article></div>`;
     }
 
     function renderFinancePage() {
-        const active = trucks.filter((truck) => truck.status !== "stopped");
+        const active = trucks.filter((truck) => !["stopped", "cancelled"].includes(truck.status));
         const revenue = active.reduce((sum, truck) => sum + Number(truck.amount || 68400), 0);
         const costs = Math.round(revenue * .68);
         const rows = active.map((truck) => `<tr><td><strong>${escapeHTML(truck.id)}</strong><small>${escapeHTML(truck.plate)}</small></td><td>${escapeHTML(truck.from)} → ${escapeHTML(truck.to)}</td><td>${escapeHTML(truck.driver)}</td><td>${currency(Number(truck.amount || 68400))}</td><td><span class="table-status ${truck.status}">${escapeHTML(statusLabels[truck.status])}</span></td></tr>`).join("");
@@ -503,6 +556,10 @@
         });
         const search = byId("pageSearch");
         if (search) search.addEventListener("input", () => {
+            if (currentPage === "trips") {
+                applyTripFilters();
+                return;
+            }
             const query = search.value.toLocaleLowerCase("ru");
             byId("workspacePage").querySelectorAll(".data-table tbody tr, .person-card").forEach((row) => {
                 row.hidden = !row.textContent.toLocaleLowerCase("ru").includes(query);
@@ -510,16 +567,19 @@
         });
         byId("workspacePage").querySelectorAll("[data-trip-filter]").forEach((button) => {
             button.addEventListener("click", () => {
-                const filter = button.dataset.tripFilter;
-                byId("workspacePage").querySelectorAll("[data-trip-filter]").forEach((item) => item.classList.toggle("active", item === button));
-                byId("tripsTableBody").querySelectorAll("tr").forEach((row) => {
-                    const matches = filter === "all" || (filter === "active" && !row.querySelector(".table-status.delivered, .table-status.stopped"))
-                        || (filter === "delayed" && row.querySelector(".table-status.delayed"))
-                        || (filter === "delivered" && row.querySelector(".table-status.delivered"));
-                    row.hidden = !matches;
-                });
+                activeTripFilter = button.dataset.tripFilter;
+                applyTripFilters();
             });
         });
+        byId("workspacePage").querySelector("#tripDateFrom")?.addEventListener("change", (event) => {
+            tripDateFrom = event.currentTarget.value;
+            applyTripFilters();
+        });
+        byId("workspacePage").querySelector("#tripDateTo")?.addEventListener("change", (event) => {
+            tripDateTo = event.currentTarget.value;
+            applyTripFilters();
+        });
+        if (currentPage === "trips") applyTripFilters();
         byId("workspacePage").querySelector("#companyForm")?.addEventListener("submit", saveCompanySettings);
         byId("workspacePage").querySelector("#backupFile")?.addEventListener("change", importBackup);
     }
@@ -536,8 +596,19 @@
         if (action === "delete-driver") return deleteRecord("driver", id);
         if (action === "delete-client") return deleteRecord("client", id);
         if (action === "complete-trip") return completeTrip(id);
-        if (action === "export-trips") return exportCSV(trucks.filter((truck) => truck.status !== "stopped"), "reisy-transline.csv");
-        if (action === "export-finance") return exportCSV(trucks.filter((truck) => truck.status !== "stopped").map((truck) => ({ id: truck.id, route: `${truck.from} → ${truck.to}`, driver: truck.driver, amount: truck.amount || 68400, status: statusLabels[truck.status] })), "finansy-transline.csv");
+        if (action === "cancel-trip") return cancelTrip(id);
+        if (action === "export-trips") return exportCSV(trucks.map((truck) => ({
+            id: truck.id,
+            plate: truck.plate,
+            route: `${truck.from} → ${truck.to}`,
+            driver: truck.driver,
+            eta: truck.eta,
+            createdAt: new Intl.DateTimeFormat("ru-RU").format(truck.createdAt),
+            status: statusLabels[truck.status],
+            progress: `${truck.progress}%`,
+            amount: truck.amount || 0
+        })), "reisy-transline.csv");
+        if (action === "export-finance") return exportCSV(trucks.filter((truck) => !["stopped", "cancelled"].includes(truck.status)).map((truck) => ({ id: truck.id, route: `${truck.from} → ${truck.to}`, driver: truck.driver, amount: truck.amount || 68400, status: statusLabels[truck.status] })), "finansy-transline.csv");
         if (action === "export-backup") return exportBackup();
         if (action === "import-backup") return byId("backupFile").click();
         if (action === "reset-data") return resetDemoData();
@@ -630,6 +701,7 @@
                 location: values.location.trim(),
                 eta: values.eta.trim(),
                 status: values.status || existing?.status || "stopped",
+                createdAt: existing?.createdAt || Date.now(),
                 amount: Number(values.amount) || 0,
                 progress: Math.max(0, Math.min(100, Number(values.progress) || 0)),
                 x: existing?.x ?? 20 + Math.random() * 60,
@@ -686,7 +758,7 @@
 
     function completeTrip(id) {
         const trip = trucks.find((truck) => truck.id === id);
-        if (!trip || trip.status === "delivered") return;
+        if (!trip || !["moving", "delayed"].includes(trip.status)) return;
         trucks = trucks.map((truck) => truck.id === id ? { ...truck, status: "delivered", progress: 100, location: `Доставлено: ${truck.to}` } : truck);
         saveTrucks();
         addActivity("Доставка завершена", `${trip.id} прибыл в ${trip.to} · ${trip.driver}`, "delivered");
@@ -695,6 +767,20 @@
         renderRoutes();
         renderWorkspacePage(currentPage);
         showToast(`Рейс ${id} отмечен как доставленный.`);
+    }
+
+    function cancelTrip(id) {
+        const trip = trucks.find((truck) => truck.id === id);
+        if (!trip || !["moving", "delayed"].includes(trip.status)) return;
+        if (!window.confirm(`Отменить рейс ${trip.id} по маршруту ${trip.from} → ${trip.to}?`)) return;
+        trucks = trucks.map((truck) => truck.id === id ? { ...truck, status: "cancelled" } : truck);
+        saveTrucks();
+        addActivity("Рейс отменён", `${trip.id} · ${trip.from} → ${trip.to}`, "warning");
+        updateMetrics();
+        renderFleet();
+        renderRoutes();
+        renderWorkspacePage(currentPage);
+        showToast(`Рейс ${id} отменён.`);
     }
 
     function exportCSV(rows, filename) {
@@ -746,7 +832,7 @@
                 });
                 throw error;
             }
-            trucks = backup.trucks;
+            trucks = normalizeTrucks(backup.trucks);
             drivers = backup.drivers;
             clients = backup.clients;
             activities = nextActivities;
@@ -777,7 +863,7 @@
 
     function resetDemoData() {
         if (!window.confirm("Сбросить машины, водителей и клиентов к исходным демо-данным?")) return;
-        trucks = starterTrucks.map((item) => ({ ...item }));
+        trucks = normalizeTrucks(starterTrucks);
         drivers = starterDrivers.map((item) => ({ ...item }));
         clients = starterClients.map((item) => ({ ...item }));
         activities = [
@@ -928,7 +1014,10 @@
         if (event.key === "Escape") closeAllModals();
         if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === "k") {
             event.preventDefault();
-            byId("truckSearch").focus();
+            if (byId("dashboard").hidden) return;
+            const pageSearch = byId("pageSearch");
+            if (currentPage !== "overview" && pageSearch) pageSearch.focus();
+            else byId("truckSearch").focus();
         }
     });
 
@@ -1101,6 +1190,7 @@
             client,
             amount,
             status: "moving",
+            createdAt: Date.now(),
             eta: etaInput ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(etaInput)) : "Расчёт ETA",
             progress: 4,
             x: 17 + ((position * 13 + 19) % 70),

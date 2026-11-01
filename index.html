@@ -80,7 +80,8 @@
                 </button>
                 <button class="nav-link" data-section="Финансы" data-page="finance">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18M7 15h3" />
+                        <rect x="3" y="5" width="18" height="14" rx="2" />
+                        <path d="M3 10h18M7 15h3" />
                     </svg><span>Финансы</span>
                 </button>
                 <button class="nav-link" data-section="Настройки" data-page="settings">
@@ -135,219 +136,222 @@
 
             <div class="page-content">
                 <div id="overviewPage">
-                <section class="welcome-row">
-                    <div>
-                        <p class="eyebrow"><span class="eyebrow-dot"></span> <span id="todayDate"></span>
-                        </p>
-                        <h1>Доброе утро, <span id="greetingName">Алексей</span> <span class="wave">✳</span></h1>
-                        <p class="welcome-subtitle">Ваша логистика под контролем. Вот что происходит сегодня.</p>
-                    </div>
-                    <div class="welcome-actions">
-                        <button class="button button-outline" id="refreshButton"><svg viewBox="0 0 24 24">
-                                <path d="M20 7v5h-5M4 17v-5h5" />
-                                <path d="M5.5 9A7 7 0 0 1 17 6l3 6M4 12l3 6a7 7 0 0 0 11.5-3" />
-                            </svg><span>Обновить</span></button>
-                        <button class="button button-primary" id="newTripButton"><svg viewBox="0 0 24 24">
-                                <path d="M12 5v14M5 12h14" />
-                            </svg><span>Создать рейс</span></button>
-                    </div>
-                </section>
+                    <section class="welcome-row">
+                        <div>
+                            <p class="eyebrow"><span class="eyebrow-dot"></span> <span id="todayDate"></span>
+                            </p>
+                            <h1>Доброе утро, <span id="greetingName">Алексей</span> <span class="wave">✳</span></h1>
+                            <p class="welcome-subtitle">Ваша логистика под контролем. Вот что происходит сегодня.</p>
+                        </div>
+                        <div class="welcome-actions">
+                            <button class="button button-outline" id="refreshButton"><svg viewBox="0 0 24 24">
+                                    <path d="M20 7v5h-5M4 17v-5h5" />
+                                    <path d="M5.5 9A7 7 0 0 1 17 6l3 6M4 12l3 6a7 7 0 0 0 11.5-3" />
+                                </svg><span>Обновить</span></button>
+                            <button class="button button-primary" id="newTripButton"><svg viewBox="0 0 24 24">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg><span>Создать рейс</span></button>
+                        </div>
+                    </section>
 
-                <section class="metrics-grid" aria-label="Сводка за сегодня">
-                    <article class="metric-card">
-                        <div class="metric-heading"><span>Всего машин</span><span class="metric-icon blue"><svg
-                                    viewBox="0 0 24 24">
-                                    <path d="M3 7h11v10H3zM14 10h4l3 3v4h-7" />
-                                    <circle cx="7.5" cy="18" r="2" />
-                                    <circle cx="17.5" cy="18" r="2" />
-                                </svg></span></div>
-                        <div class="metric-number"><strong id="totalTrucks">6</strong><span class="metric-caption">в
-                                автопарке</span></div>
-                        <div class="metric-foot"><span class="metric-track"><i style="width:82%"></i></span><span>82%
-                                загружено</span></div>
-                    </article>
-                    <article class="metric-card">
-                        <div class="metric-heading"><span>В пути</span><span class="metric-icon mint"><svg
-                                    viewBox="0 0 24 24">
-                                    <path d="M3 7h11v10H3zM14 10h4l3 3v4h-7" />
-                                    <circle cx="7.5" cy="18" r="2" />
-                                    <circle cx="17.5" cy="18" r="2" />
-                                    <path d="m7 11 2 2 4-4" />
-                                </svg></span></div>
-                        <div class="metric-number"><strong id="movingTrucks">4</strong><span
-                                class="metric-change positive">↑ 2 за неделю</span></div>
-                        <div class="metric-foot"><span class="metric-track mint-track"><i id="movingTrack"
-                                    style="width:67%"></i></span><span>На маршруте</span></div>
-                    </article>
-                    <article class="metric-card">
-                        <div class="metric-heading"><span>Нужна проверка</span><span class="metric-icon amber"><svg
-                                    viewBox="0 0 24 24">
-                                    <circle cx="12" cy="12" r="8.5" />
-                                    <path d="M12 7v5l3 2" />
-                                </svg></span></div>
-                        <div class="metric-number"><strong id="delayedTrucks">1</strong><span
-                                class="metric-change attention">Требует внимания</span></div>
-                        <div class="metric-foot"><span class="metric-track amber-track"><i id="delayedTrack"
-                                    style="width:17%"></i></span><span>Задержка в пути</span></div>
-                    </article>
-                    <article class="metric-card">
-                        <div class="metric-heading"><span>Доставлено сегодня</span><span class="metric-icon violet"><svg
-                                    viewBox="0 0 24 24">
-                                    <path d="M4 18V6m0 12h16" />
-                                    <path d="m7 14 3-3 3 2 5-6" />
-                                    <path d="M15 7h3v3" />
-                                </svg></span></div>
-                        <div class="metric-number"><strong>18</strong><span class="metric-change positive">↑ 12% к
-                                вчера</span></div>
-                        <div class="metric-foot"><span class="metric-track violet-track"><i
-                                    style="width:74%"></i></span><span>Из 24 запланированных</span></div>
-                    </article>
-                </section>
-
-                <section class="workspace-grid">
-                    <article class="panel map-panel">
-                        <div class="panel-heading">
-                            <div>
-                                <div class="panel-title-row">
-                                    <h2>Карта автопарка</h2><span class="live-pill"><i></i> LIVE</span>
-                                </div>
-                                <p>Местоположение транспорта на маршрутах</p>
-                            </div>
-                            <div class="map-actions"><span class="last-updated">Обновлено <strong
-                                        id="lastUpdated">только что</strong></span><button class="small-icon-button"
-                                    id="zoomMapButton" aria-label="Увеличить карту" title="Увеличить карту"><svg
+                    <section class="metrics-grid" aria-label="Сводка за сегодня">
+                        <article class="metric-card">
+                            <div class="metric-heading"><span>Всего машин</span><span class="metric-icon blue"><svg
                                         viewBox="0 0 24 24">
-                                        <circle cx="10.8" cy="10.8" r="6.8" />
-                                        <path d="m16 16 4 4M10.8 7.5v6.6M7.5 10.8h6.6" />
-                                    </svg></button></div>
-                        </div>
-                        <div class="map-container" id="mapContainer">
-                            <svg class="map-art" viewBox="0 0 900 470" preserveAspectRatio="xMidYMid slice" role="img"
-                                aria-label="Схематичная карта маршрутов в европейской части России">
-                                <defs>
-                                    <pattern id="cityGrid" width="66" height="56" patternUnits="userSpaceOnUse"
-                                        patternTransform="rotate(-12)">
-                                        <rect x="6" y="6" width="46" height="34" rx="5" fill="#e9ece5" />
-                                        <path d="M13 14h30M13 22h21" stroke="#dfe4dc" stroke-width="2" />
-                                    </pattern>
-                                    <pattern id="trees" width="31" height="31" patternUnits="userSpaceOnUse">
-                                        <circle cx="8" cy="9" r="5" fill="#d9e8d8" />
-                                        <circle cx="23" cy="23" r="6" fill="#e1eddf" />
-                                    </pattern>
-                                </defs>
-                                <rect width="900" height="470" fill="#f1f2eb" />
-                                <rect width="900" height="470" fill="url(#cityGrid)" opacity=".8" />
-                                <path
-                                    d="M0 0h165l48 73-25 76-128 22L0 132zm735 0h165v145l-85 21-45-83zM0 340l86-30 70 60-36 100H0zm694 30 94-48 112 68v80H686z"
-                                    fill="url(#trees)" />
-                                <path d="M-50 214C88 194 176 248 264 224s178-61 289-23 181 52 407-5" fill="none"
-                                    stroke="#d9eaf0" stroke-width="35" />
-                                <path d="M-50 214C88 194 176 248 264 224s178-61 289-23 181 52 407-5" fill="none"
-                                    stroke="#bddce4" stroke-width="2" />
-                                <g fill="none" stroke-linecap="round">
-                                    <path
-                                        d="M-25 77c142 38 217 85 329 70s167-62 284-38 201 36 361-2M45 409c116-81 173-146 305-166s249 31 375 131M219-25c-12 107 52 173 35 263s-35 142 6 259M567-20c-43 113-12 169 19 245s17 156-14 260M795-10c-21 94-89 127-77 232s64 143 96 263"
-                                        stroke="#fff" stroke-width="9" />
-                                    <path
-                                        d="M-25 77c142 38 217 85 329 70s167-62 284-38 201 36 361-2M45 409c116-81 173-146 305-166s249 31 375 131M219-25c-12 107 52 173 35 263s-35 142 6 259M567-20c-43 113-12 169 19 245s17 156-14 260M795-10c-21 94-89 127-77 232s64 143 96 263"
-                                        stroke="#d8dcd4" stroke-width="1.5" />
-                                    <path
-                                        d="M129 111c56 40 95 76 139 121s129 78 212 70 173-59 274-104M268 232c4-62 68-96 158-103s145 33 193 61M480 302c56 29 106 64 151 107"
-                                        stroke="#fff" stroke-width="7" />
-                                    <path d="M129 111c56 40 95 76 139 121s129 78 212 70 173-59 274-104" stroke="#a9b5b4"
-                                        stroke-width="1.5" stroke-dasharray="7 7" />
-                                    <path d="M268 232c4-62 68-96 158-103s145 33 193 61M480 302c56 29 106 64 151 107"
-                                        stroke="#a9b5b4" stroke-width="1.5" stroke-dasharray="7 7" />
-                                </g>
-                                <path d="M268 232c60 30 128 65 212 70s172-59 274-104" fill="none" stroke="#5879ee"
-                                    stroke-width="3" stroke-linecap="round" stroke-dasharray="8 7" opacity=".8" />
-                                <g fill="#fff" stroke="#5475e9" stroke-width="4">
-                                    <circle cx="268" cy="232" r="7" />
-                                    <circle cx="754" cy="198" r="7" />
-                                </g>
-                                <g fill="#53616c" font-family="DM Sans, sans-serif" font-size="12" font-weight="600">
-                                    <text x="237" y="259">Москва</text><text x="121" y="112">Тверь</text><text x="413"
-                                        y="119">Ярославль</text><text x="469" y="331">Нижний Новгород</text><text
-                                        x="753" y="183">Казань</text><text x="642" y="430">Самара</text><text x="71"
-                                        y="378">Смоленск</text>
-                                </g>
-                                <g fill="#a2aaa4" font-family="DM Sans, sans-serif" font-size="9">
-                                    <text x="177" y="328">М-3</text><text x="351" y="210">М-8</text><text x="569"
-                                        y="275">М-7</text><text x="697" y="330">Р-239</text>
-                                </g>
-                            </svg>
-                            <div class="map-markers" id="mapMarkers" aria-label="Машины на карте"></div>
-                            <div class="map-legend"><span><i class="legend-dot moving"></i>В пути</span><span><i
-                                        class="legend-dot delayed"></i>Задержка</span><span><i
-                                        class="legend-dot stopped"></i>Стоянка</span></div>
-                            <span class="map-disclaimer">Демо-карта · координаты примерные</span>
-                        </div>
-                    </article>
+                                        <path d="M3 7h11v10H3zM14 10h4l3 3v4h-7" />
+                                        <circle cx="7.5" cy="18" r="2" />
+                                        <circle cx="17.5" cy="18" r="2" />
+                                    </svg></span></div>
+                            <div class="metric-number"><strong id="totalTrucks">6</strong><span class="metric-caption">в
+                                    автопарке</span></div>
+                            <div class="metric-foot"><span class="metric-track"><i
+                                        style="width:82%"></i></span><span>82%
+                                    загружено</span></div>
+                        </article>
+                        <article class="metric-card">
+                            <div class="metric-heading"><span>В пути</span><span class="metric-icon mint"><svg
+                                        viewBox="0 0 24 24">
+                                        <path d="M3 7h11v10H3zM14 10h4l3 3v4h-7" />
+                                        <circle cx="7.5" cy="18" r="2" />
+                                        <circle cx="17.5" cy="18" r="2" />
+                                        <path d="m7 11 2 2 4-4" />
+                                    </svg></span></div>
+                            <div class="metric-number"><strong id="movingTrucks">4</strong><span
+                                    class="metric-change positive">↑ 2 за неделю</span></div>
+                            <div class="metric-foot"><span class="metric-track mint-track"><i id="movingTrack"
+                                        style="width:67%"></i></span><span>На маршруте</span></div>
+                        </article>
+                        <article class="metric-card">
+                            <div class="metric-heading"><span>Нужна проверка</span><span class="metric-icon amber"><svg
+                                        viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="8.5" />
+                                        <path d="M12 7v5l3 2" />
+                                    </svg></span></div>
+                            <div class="metric-number"><strong id="delayedTrucks">1</strong><span
+                                    class="metric-change attention">Требует внимания</span></div>
+                            <div class="metric-foot"><span class="metric-track amber-track"><i id="delayedTrack"
+                                        style="width:17%"></i></span><span>Задержка в пути</span></div>
+                        </article>
+                        <article class="metric-card">
+                            <div class="metric-heading"><span>Доставлено сегодня</span><span
+                                    class="metric-icon violet"><svg viewBox="0 0 24 24">
+                                        <path d="M4 18V6m0 12h16" />
+                                        <path d="m7 14 3-3 3 2 5-6" />
+                                        <path d="M15 7h3v3" />
+                                    </svg></span></div>
+                            <div class="metric-number"><strong>18</strong><span class="metric-change positive">↑ 12% к
+                                    вчера</span></div>
+                            <div class="metric-foot"><span class="metric-track violet-track"><i
+                                        style="width:74%"></i></span><span>Из 24 запланированных</span></div>
+                        </article>
+                    </section>
 
-                    <article class="panel fleet-panel" id="fleetSection">
-                        <div class="panel-heading fleet-heading">
-                            <div>
-                                <div class="panel-title-row">
-                                    <h2>Ваш автопарк</h2><span class="count-pill" id="fleetCount">6</span>
+                    <section class="workspace-grid">
+                        <article class="panel map-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <div class="panel-title-row">
+                                        <h2>Карта автопарка</h2><span class="live-pill"><i></i> LIVE</span>
+                                    </div>
+                                    <p>Местоположение транспорта на маршрутах</p>
                                 </div>
-                                <p>Статус и местоположение</p>
+                                <div class="map-actions"><span class="last-updated">Обновлено <strong
+                                            id="lastUpdated">только что</strong></span><button class="small-icon-button"
+                                        id="zoomMapButton" aria-label="Увеличить карту" title="Увеличить карту"><svg
+                                            viewBox="0 0 24 24">
+                                            <circle cx="10.8" cy="10.8" r="6.8" />
+                                            <path d="m16 16 4 4M10.8 7.5v6.6M7.5 10.8h6.6" />
+                                        </svg></button></div>
                             </div>
-                            <button class="small-icon-button" id="resetFiltersButton" aria-label="Сбросить фильтры"
-                                title="Сбросить фильтры"><svg viewBox="0 0 24 24">
-                                    <path d="M4 6h16M7 12h10m-7 6h4" />
-                                </svg></button>
-                        </div>
-                        <label class="fleet-search"><svg viewBox="0 0 24 24">
-                                <circle cx="10.8" cy="10.8" r="6.8" />
-                                <path d="m16 16 4 4" />
-                            </svg><input id="truckSearch" type="search" placeholder="Поиск машины или водителя..."
-                                aria-label="Поиск машины или водителя"><kbd>⌘ K</kbd></label>
-                        <div class="fleet-filters" role="group" aria-label="Фильтр по статусу">
-                            <button class="filter-chip active" data-filter="all">Все <span
-                                    id="allFilterCount">6</span></button>
-                            <button class="filter-chip" data-filter="moving">В пути</button>
-                            <button class="filter-chip" data-filter="delayed">Задержка</button>
-                            <button class="filter-chip" data-filter="stopped">Стоянка</button>
-                        </div>
-                        <div class="fleet-list" id="fleetList" aria-live="polite"></div>
-                        <div class="selected-truck"><span><small>ВЫБРАННАЯ МАШИНА</small><strong
-                                    id="selectedTruck">Выберите машину в списке</strong></span><button
-                                id="truckDetailsButton">Подробнее <span>→</span></button></div>
-                    </article>
-                </section>
+                            <div class="map-container" id="mapContainer">
+                                <svg class="map-art" viewBox="0 0 900 470" preserveAspectRatio="xMidYMid slice"
+                                    role="img" aria-label="Схематичная карта маршрутов в европейской части России">
+                                    <defs>
+                                        <pattern id="cityGrid" width="66" height="56" patternUnits="userSpaceOnUse"
+                                            patternTransform="rotate(-12)">
+                                            <rect x="6" y="6" width="46" height="34" rx="5" fill="#e9ece5" />
+                                            <path d="M13 14h30M13 22h21" stroke="#dfe4dc" stroke-width="2" />
+                                        </pattern>
+                                        <pattern id="trees" width="31" height="31" patternUnits="userSpaceOnUse">
+                                            <circle cx="8" cy="9" r="5" fill="#d9e8d8" />
+                                            <circle cx="23" cy="23" r="6" fill="#e1eddf" />
+                                        </pattern>
+                                    </defs>
+                                    <rect width="900" height="470" fill="#f1f2eb" />
+                                    <rect width="900" height="470" fill="url(#cityGrid)" opacity=".8" />
+                                    <path
+                                        d="M0 0h165l48 73-25 76-128 22L0 132zm735 0h165v145l-85 21-45-83zM0 340l86-30 70 60-36 100H0zm694 30 94-48 112 68v80H686z"
+                                        fill="url(#trees)" />
+                                    <path d="M-50 214C88 194 176 248 264 224s178-61 289-23 181 52 407-5" fill="none"
+                                        stroke="#d9eaf0" stroke-width="35" />
+                                    <path d="M-50 214C88 194 176 248 264 224s178-61 289-23 181 52 407-5" fill="none"
+                                        stroke="#bddce4" stroke-width="2" />
+                                    <g fill="none" stroke-linecap="round">
+                                        <path
+                                            d="M-25 77c142 38 217 85 329 70s167-62 284-38 201 36 361-2M45 409c116-81 173-146 305-166s249 31 375 131M219-25c-12 107 52 173 35 263s-35 142 6 259M567-20c-43 113-12 169 19 245s17 156-14 260M795-10c-21 94-89 127-77 232s64 143 96 263"
+                                            stroke="#fff" stroke-width="9" />
+                                        <path
+                                            d="M-25 77c142 38 217 85 329 70s167-62 284-38 201 36 361-2M45 409c116-81 173-146 305-166s249 31 375 131M219-25c-12 107 52 173 35 263s-35 142 6 259M567-20c-43 113-12 169 19 245s17 156-14 260M795-10c-21 94-89 127-77 232s64 143 96 263"
+                                            stroke="#d8dcd4" stroke-width="1.5" />
+                                        <path
+                                            d="M129 111c56 40 95 76 139 121s129 78 212 70 173-59 274-104M268 232c4-62 68-96 158-103s145 33 193 61M480 302c56 29 106 64 151 107"
+                                            stroke="#fff" stroke-width="7" />
+                                        <path d="M129 111c56 40 95 76 139 121s129 78 212 70 173-59 274-104"
+                                            stroke="#a9b5b4" stroke-width="1.5" stroke-dasharray="7 7" />
+                                        <path d="M268 232c4-62 68-96 158-103s145 33 193 61M480 302c56 29 106 64 151 107"
+                                            stroke="#a9b5b4" stroke-width="1.5" stroke-dasharray="7 7" />
+                                    </g>
+                                    <path d="M268 232c60 30 128 65 212 70s172-59 274-104" fill="none" stroke="#5879ee"
+                                        stroke-width="3" stroke-linecap="round" stroke-dasharray="8 7" opacity=".8" />
+                                    <g fill="#fff" stroke="#5475e9" stroke-width="4">
+                                        <circle cx="268" cy="232" r="7" />
+                                        <circle cx="754" cy="198" r="7" />
+                                    </g>
+                                    <g fill="#53616c" font-family="DM Sans, sans-serif" font-size="12"
+                                        font-weight="600">
+                                        <text x="237" y="259">Москва</text><text x="121" y="112">Тверь</text><text
+                                            x="413" y="119">Ярославль</text><text x="469" y="331">Нижний
+                                            Новгород</text><text x="753" y="183">Казань</text><text x="642"
+                                            y="430">Самара</text><text x="71" y="378">Смоленск</text>
+                                    </g>
+                                    <g fill="#a2aaa4" font-family="DM Sans, sans-serif" font-size="9">
+                                        <text x="177" y="328">М-3</text><text x="351" y="210">М-8</text><text x="569"
+                                            y="275">М-7</text><text x="697" y="330">Р-239</text>
+                                    </g>
+                                </svg>
+                                <div class="map-markers" id="mapMarkers" aria-label="Машины на карте"></div>
+                                <div class="map-legend"><span><i class="legend-dot moving"></i>В пути</span><span><i
+                                            class="legend-dot delayed"></i>Задержка</span><span><i
+                                            class="legend-dot stopped"></i>Стоянка</span></div>
+                                <span class="map-disclaimer">Демо-карта · координаты примерные</span>
+                            </div>
+                        </article>
 
-                <section class="lower-grid">
-                    <article class="panel routes-panel" id="routesSection">
-                        <div class="panel-heading lower-heading">
-                            <div>
-                                <h2>Активные рейсы</h2>
-                                <p>Следите за доставками и временем прибытия</p>
-                            </div><button class="text-button" id="allRoutesButton">Все рейсы <span>→</span></button>
-                        </div>
-                        <div class="routes-table-wrap">
-                            <table class="routes-table">
-                                <thead>
-                                    <tr>
-                                        <th>МАШИНА / ВОДИТЕЛЬ</th>
-                                        <th>МАРШРУТ</th>
-                                        <th>ПРИБЫТИЕ</th>
-                                        <th>ПРОГРЕСС</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="routesTableBody"></tbody>
-                            </table>
-                        </div>
-                    </article>
-                    <article class="panel activity-panel">
-                        <div class="panel-heading lower-heading">
-                            <div>
-                                <h2>Последние события</h2>
-                                <p>Что нового в автопарке</p>
-                            </div><button class="text-button" id="activityButton">Все события <span>→</span></button>
-                        </div>
-                        <div class="activity-list" id="activityList"></div>
-                    </article>
-                </section>
+                        <article class="panel fleet-panel" id="fleetSection">
+                            <div class="panel-heading fleet-heading">
+                                <div>
+                                    <div class="panel-title-row">
+                                        <h2>Ваш автопарк</h2><span class="count-pill" id="fleetCount">6</span>
+                                    </div>
+                                    <p>Статус и местоположение</p>
+                                </div>
+                                <button class="small-icon-button" id="resetFiltersButton" aria-label="Сбросить фильтры"
+                                    title="Сбросить фильтры"><svg viewBox="0 0 24 24">
+                                        <path d="M4 6h16M7 12h10m-7 6h4" />
+                                    </svg></button>
+                            </div>
+                            <label class="fleet-search"><svg viewBox="0 0 24 24">
+                                    <circle cx="10.8" cy="10.8" r="6.8" />
+                                    <path d="m16 16 4 4" />
+                                </svg><input id="truckSearch" type="search" placeholder="Поиск машины или водителя..."
+                                    aria-label="Поиск машины или водителя"><kbd>⌘ K</kbd></label>
+                            <div class="fleet-filters" role="group" aria-label="Фильтр по статусу">
+                                <button class="filter-chip active" data-filter="all">Все <span
+                                        id="allFilterCount">6</span></button>
+                                <button class="filter-chip" data-filter="moving">В пути</button>
+                                <button class="filter-chip" data-filter="delayed">Задержка</button>
+                                <button class="filter-chip" data-filter="stopped">Стоянка</button>
+                            </div>
+                            <div class="fleet-list" id="fleetList" aria-live="polite"></div>
+                            <div class="selected-truck"><span><small>ВЫБРАННАЯ МАШИНА</small><strong
+                                        id="selectedTruck">Выберите машину в списке</strong></span><button
+                                    id="truckDetailsButton">Подробнее <span>→</span></button></div>
+                        </article>
+                    </section>
+
+                    <section class="lower-grid">
+                        <article class="panel routes-panel" id="routesSection">
+                            <div class="panel-heading lower-heading">
+                                <div>
+                                    <h2>Активные рейсы</h2>
+                                    <p>Следите за доставками и временем прибытия</p>
+                                </div><button class="text-button" id="allRoutesButton">Все рейсы <span>→</span></button>
+                            </div>
+                            <div class="routes-table-wrap">
+                                <table class="routes-table">
+                                    <thead>
+                                        <tr>
+                                            <th>МАШИНА / ВОДИТЕЛЬ</th>
+                                            <th>МАРШРУТ</th>
+                                            <th>ПРИБЫТИЕ</th>
+                                            <th>ПРОГРЕСС</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="routesTableBody"></tbody>
+                                </table>
+                            </div>
+                        </article>
+                        <article class="panel activity-panel">
+                            <div class="panel-heading lower-heading">
+                                <div>
+                                    <h2>Последние события</h2>
+                                    <p>Что нового в автопарке</p>
+                                </div><button class="text-button" id="activityButton">Все события
+                                    <span>→</span></button>
+                            </div>
+                            <div class="activity-list" id="activityList"></div>
+                        </article>
+                    </section>
                 </div>
                 <section id="workspacePage" class="workspace-page" hidden></section>
                 <footer class="page-footer"><span>© 2026 ТрансЛайн</span><span><i></i> Демо-режим · данные не подключены
@@ -360,7 +364,10 @@
         <section class="auth-modal" aria-labelledby="authTitle">
             <aside class="auth-story">
                 <a class="brand auth-brand" href="#" aria-label="ТрансЛайн">
-                    <span class="brand-symbol" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 22h12a6 6 0 0 0 0-12H9m0 0 4-4M9 10l4 4M23 22h4" /><circle cx="23" cy="22" r="2" /></svg></span>
+                    <span class="brand-symbol" aria-hidden="true"><svg viewBox="0 0 32 32">
+                            <path d="M5 22h12a6 6 0 0 0 0-12H9m0 0 4-4M9 10l4 4M23 22h4" />
+                            <circle cx="23" cy="22" r="2" />
+                        </svg></span>
                     <span class="brand-word">транс<span>лайн</span></span>
                 </a>
                 <div class="auth-story-content">
@@ -373,38 +380,61 @@
                         <div class="auth-route-cities"><strong>Москва</strong><strong>Казань</strong></div>
                         <div class="auth-route-bottom"><span>Сергей Козлов</span><span>Прибытие 14:30</span></div>
                     </div>
-                    <div class="auth-benefits"><span><i>✓</i> Контроль автопарка</span><span><i>✓</i> Статус рейсов онлайн</span></div>
+                    <div class="auth-benefits"><span><i>✓</i> Контроль автопарка</span><span><i>✓</i> Статус рейсов
+                            онлайн</span></div>
                 </div>
                 <span class="auth-story-foot">ПРОСТО. НАГЛЯДНО. ПОД КОНТРОЛЕМ.</span>
             </aside>
             <div class="auth-form-panel">
                 <div class="auth-form-top">
-                    <span class="auth-secure"><svg viewBox="0 0 24 24"><path d="M6 10V7a6 6 0 0 1 12 0v3M5 10h14v11H5z"/><circle cx="12" cy="15" r="1"/></svg> ДЕМО-ДОСТУП</span>
+                    <span class="auth-secure"><svg viewBox="0 0 24 24">
+                            <path d="M6 10V7a6 6 0 0 1 12 0v3M5 10h14v11H5z" />
+                            <circle cx="12" cy="15" r="1" />
+                        </svg> ДЕМО-ДОСТУП</span>
                     <button class="demo-access-link" id="demoAccessButton" type="button">Посмотреть демо →</button>
                 </div>
                 <p class="modal-eyebrow">РАБОЧЕЕ ПРОСТРАНСТВО СЕВЕРТРАНС</p>
                 <h2 id="authTitle">Создайте аккаунт</h2>
                 <p class="modal-description" id="authDescription">Начните управлять перевозками в одном месте.</p>
                 <div class="auth-tabs" role="tablist" aria-label="Выберите действие">
-                    <button class="auth-tab active" id="registerTab" type="button" role="tab" aria-selected="true">Регистрация</button>
+                    <button class="auth-tab active" id="registerTab" type="button" role="tab"
+                        aria-selected="true">Регистрация</button>
                     <button class="auth-tab" id="loginTab" type="button" role="tab" aria-selected="false">Войти</button>
                 </div>
                 <form class="auth-form" id="registerForm">
-                    <label class="form-field"><span>Ваше имя</span><input id="registerName" type="text" placeholder="Например, Анна Смирнова" autocomplete="name" maxlength="60" required></label>
-                    <label class="form-field"><span>Название компании</span><input id="registerCompany" type="text" placeholder="Например, СеверТранс" autocomplete="organization" maxlength="60" required></label>
-                    <label class="form-field"><span>Рабочая почта</span><input id="registerEmail" type="email" placeholder="name@company.ru" autocomplete="email" required></label>
-                    <label class="form-field"><span>Пароль <small>не менее 8 символов</small></span><span class="password-wrapper"><input id="registerPassword" type="password" placeholder="Придумайте пароль" autocomplete="new-password" minlength="8" required><button class="password-toggle" type="button" data-toggle-password="registerPassword" aria-controls="registerPassword" aria-pressed="false">Показать</button></span></label>
+                    <label class="form-field"><span>Ваше имя</span><input id="registerName" type="text"
+                            placeholder="Например, Анна Смирнова" autocomplete="name" maxlength="60" required></label>
+                    <label class="form-field"><span>Название компании</span><input id="registerCompany" type="text"
+                            placeholder="Например, СеверТранс" autocomplete="organization" maxlength="60"
+                            required></label>
+                    <label class="form-field"><span>Рабочая почта</span><input id="registerEmail" type="email"
+                            placeholder="name@company.ru" autocomplete="email" required></label>
+                    <label class="form-field"><span>Пароль <small>не менее 8 символов</small></span><span
+                            class="password-wrapper"><input id="registerPassword" type="password"
+                                placeholder="Придумайте пароль" autocomplete="new-password" minlength="8"
+                                required><button class="password-toggle" type="button"
+                                data-toggle-password="registerPassword" aria-controls="registerPassword"
+                                aria-pressed="false">Показать</button></span></label>
                     <p class="form-error" id="registerError" role="alert"></p>
-                    <button class="button button-primary modal-submit" type="submit">Создать аккаунт <span>→</span></button>
+                    <button class="button button-primary modal-submit" type="submit">Создать аккаунт
+                        <span>→</span></button>
                 </form>
                 <form class="auth-form" id="loginForm" hidden>
-                    <label class="form-field"><span>Рабочая почта</span><input id="loginEmail" type="email" placeholder="name@company.ru" autocomplete="username" required></label>
-                    <label class="form-field"><span>Пароль</span><span class="password-wrapper"><input id="loginPassword" type="password" placeholder="Ваш пароль" autocomplete="current-password" minlength="8" required><button class="password-toggle" type="button" data-toggle-password="loginPassword" aria-controls="loginPassword" aria-pressed="false">Показать</button></span></label>
+                    <label class="form-field"><span>Рабочая почта</span><input id="loginEmail" type="email"
+                            placeholder="name@company.ru" autocomplete="username" required></label>
+                    <label class="form-field"><span>Пароль</span><span class="password-wrapper"><input
+                                id="loginPassword" type="password" placeholder="Ваш пароль"
+                                autocomplete="current-password" minlength="8" required><button class="password-toggle"
+                                type="button" data-toggle-password="loginPassword" aria-controls="loginPassword"
+                                aria-pressed="false">Показать</button></span></label>
                     <p class="form-error" id="loginError" role="alert"></p>
-                    <button class="button button-primary modal-submit" type="submit">Войти в систему <span>→</span></button>
+                    <button class="button button-primary modal-submit" type="submit">Войти в систему
+                        <span>→</span></button>
                 </form>
-                <p class="demo-note"><strong>Важно: это демо-версия.</strong> Аккаунт хранится только в этом браузере. Для настоящих пользователей, безопасной авторизации и GPS-трекинга понадобится сервер.</p>
-                <p class="auth-switch-hint"><span id="authSwitchText">Уже есть аккаунт?</span> <button type="button" id="authSwitchButton">Войти</button></p>
+                <p class="demo-note"><strong>Важно: это демо-версия.</strong> Аккаунт хранится только в этом браузере.
+                    Для настоящих пользователей, безопасной авторизации и GPS-трекинга понадобится сервер.</p>
+                <p class="auth-switch-hint"><span id="authSwitchText">Уже есть аккаунт?</span> <button type="button"
+                        id="authSwitchButton">Войти</button></p>
             </div>
         </section>
     </main>
@@ -427,9 +457,13 @@
                             maxlength="40" required></label>
                     <label class="form-field"><span>Куда</span><input id="tripTo" placeholder="Казань" maxlength="40"
                             required></label>
-                    <label class="form-field"><span>Клиент</span><select id="tripClient"><option value="">Не выбран</option></select></label>
-                    <label class="form-field"><span>Плановая стоимость, ₽</span><input id="tripAmount" type="number" min="0" placeholder="68 000"></label>
-                    <label class="form-field"><span>Ожидаемое прибытие</span><input id="tripEta" type="datetime-local"></label>
+                    <label class="form-field"><span>Клиент</span><select id="tripClient">
+                            <option value="">Не выбран</option>
+                        </select></label>
+                    <label class="form-field"><span>Плановая стоимость, ₽</span><input id="tripAmount" type="number"
+                            min="0" placeholder="68 000"></label>
+                    <label class="form-field"><span>Ожидаемое прибытие</span><input id="tripEta"
+                            type="datetime-local"></label>
                 </div>
                 <p class="form-error" id="tripError" role="alert"></p>
                 <button class="button button-primary modal-submit" type="submit">Добавить рейс <span>→</span></button>
@@ -441,13 +475,20 @@
     <div class="modal-backdrop" id="recordModal" hidden>
         <section class="modal trip-modal" role="dialog" aria-modal="true" aria-labelledby="recordTitle">
             <div class="modal-top">
-                <span class="modal-logo"><svg viewBox="0 0 32 32"><path d="M5 22h12a6 6 0 0 0 0-12H9m0 0 4-4M9 10l4 4M23 22h4"/><circle cx="23" cy="22" r="2"/></svg></span>
+                <span class="modal-logo"><svg viewBox="0 0 32 32">
+                        <path d="M5 22h12a6 6 0 0 0 0-12H9m0 0 4-4M9 10l4 4M23 22h4" />
+                        <circle cx="23" cy="22" r="2" />
+                    </svg></span>
                 <button class="modal-close" type="button" data-close aria-label="Закрыть">×</button>
             </div>
             <div class="modal-backdrop" id="activityModal" hidden>
-                <section class="modal activity-modal" role="dialog" aria-modal="true" aria-labelledby="activityModalTitle">
+                <section class="modal activity-modal" role="dialog" aria-modal="true"
+                    aria-labelledby="activityModalTitle">
                     <div class="modal-top">
-                        <span class="modal-logo"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg></span>
+                        <span class="modal-logo"><svg viewBox="0 0 24 24">
+                                <path d="M12 8v4l3 2" />
+                                <circle cx="12" cy="12" r="9" />
+                            </svg></span>
                         <button class="modal-close" type="button" data-close aria-label="Закрыть">×</button>
                     </div>
                     <p class="modal-eyebrow">ЖУРНАЛ СОБЫТИЙ</p>
@@ -459,14 +500,19 @@
             <div class="modal-backdrop" id="truckDetailsModal" hidden>
                 <section class="modal details-modal" role="dialog" aria-modal="true" aria-labelledby="detailsTitle">
                     <div class="modal-top">
-                        <span class="modal-logo"><svg viewBox="0 0 24 24"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7"/><circle cx="7.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg></span>
+                        <span class="modal-logo"><svg viewBox="0 0 24 24">
+                                <path d="M3 7h11v10H3zM14 10h4l3 3v4h-7" />
+                                <circle cx="7.5" cy="18" r="2" />
+                                <circle cx="17.5" cy="18" r="2" />
+                            </svg></span>
                         <button class="modal-close" type="button" data-close aria-label="Закрыть">×</button>
                     </div>
                     <p class="modal-eyebrow">КАРТОЧКА ТРАНСПОРТА</p>
                     <h2 id="detailsTitle">Данные машины</h2>
                     <p class="modal-description" id="detailsSubtitle"></p>
                     <div class="truck-details-list" id="truckDetailsList"></div>
-                    <button class="button button-primary modal-submit" id="editSelectedTruck" type="button">Изменить данные <span>→</span></button>
+                    <button class="button button-primary modal-submit" id="editSelectedTruck" type="button">Изменить
+                        данные <span>→</span></button>
                 </section>
             </div>
             <p class="modal-eyebrow" id="recordEyebrow">УПРАВЛЕНИЕ ЛОГИСТИКОЙ</p>
