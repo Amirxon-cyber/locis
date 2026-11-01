@@ -3463,6 +3463,145 @@ svg {
     color: #9aabc1;
 }
 
+:root[data-theme="dark"] .route-item {
+    border-color: #2b3a50;
+    background: #142033;
+}
+
+:root[data-theme="dark"] .route-item-main strong,
+:root[data-theme="dark"] .route-item-trail strong {
+    color: #e2eaf5;
+}
+
+:root[data-theme="dark"] .route-item-meta,
+:root[data-theme="dark"] .route-item-trail,
+:root[data-theme="dark"] .route-item-trail small {
+    color: #a4b2c5;
+}
+
+:root[data-theme="dark"] .route-tag {
+    background: #24395a;
+    color: #c4d2ff;
+}
+
+:root[data-theme="dark"] .status-ok {
+    background: #183c36;
+    color: #8fe0bc;
+}
+
+:root[data-theme="dark"] .status-warn {
+    background: #44351e;
+    color: #f0c77d;
+}
+
+:root[data-theme="dark"] .fleet-search input {
+    border-color: #36465d;
+    background: #111c2c;
+    color: #e5ebf5;
+    color-scheme: dark;
+}
+
+:root[data-theme="dark"] .fleet-search kbd {
+    border-color: #36465d;
+    background: #202e42;
+    color: #aab9cd;
+}
+
+:root[data-theme="dark"] .count-pill {
+    background: #26375a;
+    color: #c4d2ff;
+}
+
+:root[data-theme="dark"] .filter-chip {
+    color: #a0afc4;
+}
+
+:root[data-theme="dark"] .filter-chip.active {
+    border-color: #344a70;
+    background: #24395a;
+    color: #d3ddff;
+}
+
+:root[data-theme="dark"] .fleet-list {
+    border-color: #2b3a50;
+}
+
+:root[data-theme="dark"] .truck-row {
+    border-color: #29394f;
+    background: #192538;
+    color: #e4eaf3;
+}
+
+:root[data-theme="dark"] .truck-row:hover,
+:root[data-theme="dark"] .truck-row.selected {
+    background: #22334b;
+}
+
+:root[data-theme="dark"] .truck-route {
+    color: #a4b5cb;
+}
+
+:root[data-theme="dark"] .truck-subtitle,
+:root[data-theme="dark"] .empty-state {
+    color: #93a3ba;
+}
+
+:root[data-theme="dark"] .truck-avatar {
+    background: #26375a;
+    color: #c4d2ff;
+}
+
+:root[data-theme="dark"] .truck-avatar.delayed {
+    background: #44351e;
+    color: #f0c77d;
+}
+
+:root[data-theme="dark"] .truck-avatar.stopped {
+    background: #2a3749;
+    color: #b0bdcf;
+}
+
+:root[data-theme="dark"] .selected-truck {
+    background: #142033;
+    color: #e4eaf3;
+}
+
+:root[data-theme="dark"] .selected-truck small {
+    color: #9aaac0;
+}
+
+:root[data-theme="dark"] .routes-table thead {
+    background: #152134;
+}
+
+:root[data-theme="dark"] .routes-table th {
+    color: #9aabc1;
+}
+
+:root[data-theme="dark"] .routes-table td {
+    border-color: #29394f;
+    color: #d3dce9;
+}
+
+:root[data-theme="dark"] .route-vehicle small,
+:root[data-theme="dark"] .route-destination small {
+    color: #9aabc1;
+}
+
+:root[data-theme="dark"] .route-vehicle-icon {
+    background: #26375a;
+    color: #c4d2ff;
+}
+
+:root[data-theme="dark"] .route-vehicle-icon.delayed {
+    background: #44351e;
+    color: #f0c77d;
+}
+
+:root[data-theme="dark"] .progress-track {
+    background: #2b3a50;
+}
+
 :root[data-theme="dark"] .market-brief,
 :root[data-theme="dark"] .market-search-panel,
 :root[data-theme="dark"] .catalog-panel,
