@@ -838,6 +838,68 @@
           <div class="panel data-panel"><div class="data-panel-head"><div><h2>Рейсы и начисления</h2><p>Суммы ориентировочные, внесите реальные данные в учётной системе</p></div></div><div class="responsive-table"><table class="data-table"><thead><tr><th>РЕЙС</th><th>МАРШРУТ</th><th>ВОДИТЕЛЬ</th><th>ПЛАНОВАЯ СУММА</th><th>СТАТУС</th></tr></thead><tbody>${rows || `<tr><td colspan="5" class="table-empty">Нет рейсов для расчёта.</td></tr>`}</tbody></table></div></div>`;
     }
 
+    function calculateTransportEstimate(from, to, weight, body) {
+        const fromCoordinates = cityCoordinates[from.trim().toLocaleLowerCase("ru")];
+        const toCoordinates = cityCoordinates[to.trim().toLocaleLowerCase("ru")];
+        if (!fromCoordinates || !toCoordinates) {
+            return { error: "Выберите города из списка — для них доступна примерная оценка маршрута." };
+        }
+        if (from.trim().toLocaleLowerCase("ru") === to.trim().toLocaleLowerCase("ru")) {
+            return { error: "Город отправления и город доставки должны отличаться." };
+        }
+        if (!Number.isFinite(weight) || weight <= 0 || weight > 40) {
+            return { error: "Укажите вес груза больше 0 и не более 40 тонн." };
+        }
+        const toRadians = (degrees) => degrees * Math.PI / 180;
+        const [fromLatitude, fromLongitude] = fromCoordinates.map(toRadians);
+        const [toLatitude, toLongitude] = toCoordinates.map(toRadians);
+        const latitudeDelta = toLatitude - fromLatitude;
+        const longitudeDelta = toLongitude - fromLongitude;
+        const haversine = Math.sin(latitudeDelta / 2) ** 2
+            + Math.cos(fromLatitude) * Math.cos(toLatitude) * Math.sin(longitudeDelta / 2) ** 2;
+        const straightDistance = 6371 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+        const distance = Math.round(straightDistance * 1.28 / 10) * 10;
+        const weightMultiplier = weight <= 5 ? 0.85 : weight <= 10 ? 1 : weight <= 20 ? 1.25 : 1.6;
+        const bodyMultipliers = { tent: 1, curtain: 1.05, refrigerated: 1.35, container: 1.2, flatbed: 1.15 };
+        const bodyLabels = {
+            tent: "Тент",
+            curtain: "Шторный",
+            refrigerated: "Рефрижератор",
+            container: "Контейнеровоз",
+            flatbed: "Бортовой"
+        };
+        const basePrice = Math.round((15000 + distance * 120) * weightMultiplier * bodyMultipliers[body]);
+        return { distance, price: Math.round(basePrice / 1000) * 1000, bodyLabel: bodyLabels[body] };
+    }
+
+    function renderCalculatorPage() {
+        const cityOptions = Object.keys(cityCoordinates)
+            .map((city) => `<option value="${escapeHTML(city.replace(/^./, (letter) => letter.toLocaleUpperCase("ru")))}"></option>`)
+            .join("");
+        return `${makePageHeader("Калькулятор перевозки", "Рассчитайте ориентировочную стоимость по маршруту, весу и типу кузова.")}
+          <div class="calculator-layout">
+            <form class="panel calculator-form" id="calculatorForm">
+              <div class="data-panel-head calculator-heading"><div><h2>Параметры груза</h2><p>Заполните данные для предварительной оценки</p></div></div>
+              <div class="calculator-fields">
+                <label class="form-field"><span>Откуда</span><input id="calculatorFrom" list="calculatorCities" placeholder="Например, Москва" autocomplete="off" required></label>
+                <label class="form-field"><span>Куда</span><input id="calculatorTo" list="calculatorCities" placeholder="Например, Казань" autocomplete="off" required></label>
+                <datalist id="calculatorCities">${cityOptions}</datalist>
+                <label class="form-field"><span>Вес груза, тонн</span><input id="calculatorWeight" type="number" min="0.1" max="40" step="0.1" placeholder="Например, 5" required></label>
+                <label class="form-field"><span>Тип кузова</span><select id="calculatorBody" required><option value="tent">Тент</option><option value="curtain">Шторный</option><option value="refrigerated">Рефрижератор</option><option value="container">Контейнеровоз</option><option value="flatbed">Бортовой</option></select></label>
+              </div>
+              <button class="button button-primary calculator-submit" type="submit">Рассчитать стоимость <span>→</span></button>
+              <p class="calculator-note">Список городов для расчёта: Москва, Тверь, Казань, Нижний Новгород, Самара, Смоленск, Рязань, Санкт-Петербург, Ярославль, Владимир, Воронеж и Екатеринбург.</p>
+            </form>
+            <section class="panel calculator-result" id="calculatorResult" aria-live="polite">
+              <div class="calculator-result-icon">₽</div>
+              <p class="workspace-eyebrow">ПРЕДВАРИТЕЛЬНАЯ ОЦЕНКА</p>
+              <h2>Узнайте стоимость перевозки</h2>
+              <p class="calculator-result-copy">Укажите маршрут, вес и тип кузова — здесь появится ориентир для планирования.</p>
+            </section>
+          </div>
+          <p class="calculator-disclaimer">Это демонстрационный расчёт, а не тариф или коммерческое предложение перевозчика. Дистанция оценивается по координатам городов, а итоговая цена зависит от маршрута, груза, сезона, доступности транспорта и условий перевозки.</p>`;
+    }
+
     function renderSettingsPage() {
         const account = readSavedUser();
         let company = account?.company || "СеверТранс";
@@ -860,6 +922,7 @@
         clients: renderClientsPage,
         analytics: renderAnalyticsPage,
         finance: renderFinancePage,
+        calculator: renderCalculatorPage,
         settings: renderSettingsPage
     };
 
@@ -907,6 +970,21 @@
         if (currentPage === "trips") applyTripFilters();
         byId("workspacePage").querySelector("#companyForm")?.addEventListener("submit", saveCompanySettings);
         byId("workspacePage").querySelector("#backupFile")?.addEventListener("change", importBackup);
+        byId("workspacePage").querySelector("#calculatorForm")?.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const from = byId("calculatorFrom").value;
+            const to = byId("calculatorTo").value;
+            const weight = Number(byId("calculatorWeight").value);
+            const body = byId("calculatorBody").value;
+            const estimate = calculateTransportEstimate(from, to, weight, body);
+            const result = byId("calculatorResult");
+            if (estimate.error) {
+                result.innerHTML = `<div class="calculator-result-icon error">!</div><p class="workspace-eyebrow">НЕ УДАЛОСЬ РАССЧИТАТЬ</p><h2>Проверьте данные</h2><p class="calculator-result-copy">${escapeHTML(estimate.error)}</p>`;
+                return;
+            }
+            const currency = new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 });
+            result.innerHTML = `<div class="calculator-result-icon">₽</div><p class="workspace-eyebrow">ПРЕДВАРИТЕЛЬНАЯ ОЦЕНКА</p><h2>${currency.format(estimate.price)}</h2><p class="calculator-result-copy">${escapeHTML(from)} → ${escapeHTML(to)}</p><div class="calculator-breakdown"><div><span>Расстояние, ориентировочно</span><strong>≈ ${estimate.distance.toLocaleString("ru-RU")} км</strong></div><div><span>Вес груза</span><strong>${weight.toLocaleString("ru-RU")} т</strong></div><div><span>Тип кузова</span><strong>${escapeHTML(estimate.bodyLabel)}</strong></div></div>`;
+        });
     }
 
     function handlePageAction(action, id) {
