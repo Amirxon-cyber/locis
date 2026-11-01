@@ -12,7 +12,9 @@
         theme: "transline-demo-theme",
         routeSubscriptions: "transline-demo-route-subscriptions",
         marketOffers: "transline-demo-market-offers",
-        driverRatings: "transline-demo-driver-ratings"
+        driverRatings: "transline-demo-driver-ratings",
+        documents: "transline-demo-documents",
+        maintenance: "transline-demo-maintenance"
     };
     const starterTrucks = [
         { id: "RF-204", plate: "А781МР 799", driver: "Сергей Козлов", from: "Москва", to: "Казань", location: "Трасса М-7, 42 км", status: "moving", eta: "14:30", progress: 68, x: 54, y: 48 },
@@ -23,6 +25,18 @@
         { id: "RF-156", plate: "Р661УН 77", driver: "Максим Орлов", from: "Москва", to: "Нижний Новгород", location: "Владимирская обл., М-7", status: "moving", eta: "15:05", progress: 39, x: 47, y: 62 }
     ];
     const statusLabels = { moving: "В пути", delayed: "Задержка", stopped: "Стоянка", delivered: "Доставлен", cancelled: "Отменён" };
+    const documentTypes = ["CMR", "ТТН", "Счёт", "Страховка", "Разрешение", "Другое"];
+    const maintenanceTypes = ["Плановое ТО", "Замена масла", "Шины", "Тормозная система", "Ремонт", "Другое"];
+    const starterDocuments = [
+        { id: "DOC-001", tripId: "RF-204", type: "CMR", status: "ready", dueDate: dateOffsetInput(0), notes: "Демо-запись: подписанная накладная", createdAt: Date.now() - 3 * 86_400_000 },
+        { id: "DOC-002", tripId: "RF-073", type: "Страховка", status: "pending", dueDate: dateOffsetInput(1), notes: "Демо-запись: приложить копию полиса", createdAt: Date.now() - 86_400_000 },
+        { id: "DOC-003", tripId: "RF-118", type: "ТТН", status: "pending", dueDate: dateOffsetInput(2), notes: "Демо-запись: проверить комплектность", createdAt: Date.now() }
+    ];
+    const starterMaintenance = [
+        { id: "SRV-001", truckId: "RF-204", type: "Плановое ТО", dueDate: dateOffsetInput(7), odometer: 184500, cost: 42000, status: "planned", notes: "Демо-запись: запланировать на базе", createdAt: Date.now() - 86_400_000 },
+        { id: "SRV-002", truckId: "RF-091", type: "Шины", dueDate: dateOffsetInput(-2), odometer: 231000, cost: 68000, status: "planned", notes: "Демо-запись: проверить комплект зимней резины", createdAt: Date.now() - 3 * 86_400_000 },
+        { id: "SRV-003", truckId: "RF-118", type: "Замена масла", dueDate: dateOffsetInput(-14), odometer: 162300, cost: 12500, status: "done", notes: "Демо-запись: обслуживание выполнено", createdAt: Date.now() - 14 * 86_400_000, completedAt: Date.now() - 14 * 86_400_000 }
+    ];
     const starterDrivers = [
         { id: "DR-101", name: "Сергей Козлов", phone: "+7 916 234-18-07", license: "Водитель категории Е", status: "На маршруте" },
         { id: "DR-102", name: "Андрей Морозов", phone: "+7 903 512-40-26", license: "Водитель категории Е", status: "На маршруте" },
@@ -80,6 +94,8 @@
     let driverRatings = loadCollection(storageKeys.driverRatings, [],
         (item) => item && typeof item.driverId === "string" && Number.isInteger(item.value)
             && item.value >= 1 && item.value <= 5 && Number.isFinite(item.updatedAt));
+    let documents = loadCollection(storageKeys.documents, starterDocuments, isValidDocument);
+    let maintenance = loadCollection(storageKeys.maintenance, starterMaintenance, isValidMaintenance);
     let activeFilter = "all";
     let selectedTruckId = trucks[0]?.id ?? null;
     let searchQuery = "";
@@ -208,6 +224,25 @@
                 && (item.gps.accuracy === undefined || Number.isFinite(item.gps.accuracy))
                 && (item.gps.source === undefined || ["device", "manual"].includes(item.gps.source))
                 && Number.isFinite(item.gps.updatedAt)));
+    }
+
+    function isValidDocument(item) {
+        return item && typeof item === "object"
+            && ["id", "tripId", "type", "status", "dueDate", "notes"].every((key) => typeof item[key] === "string")
+            && documentTypes.includes(item.type) && ["pending", "ready"].includes(item.status)
+            && (!item.dueDate || /^\d{4}-\d{2}-\d{2}$/.test(item.dueDate))
+            && Number.isFinite(item.createdAt);
+    }
+
+    function isValidMaintenance(item) {
+        return item && typeof item === "object"
+            && ["id", "truckId", "type", "dueDate", "status", "notes"].every((key) => typeof item[key] === "string")
+            && maintenanceTypes.includes(item.type) && /^\d{4}-\d{2}-\d{2}$/.test(item.dueDate)
+            && ["planned", "done"].includes(item.status)
+            && (item.odometer === null || Number.isFinite(item.odometer))
+            && (item.cost === null || Number.isFinite(item.cost))
+            && Number.isFinite(item.createdAt)
+            && (item.completedAt === undefined || Number.isFinite(item.completedAt));
     }
 
     function saveTrucks() {
@@ -651,6 +686,19 @@
         const month = String(date.getMonth() + 1).padStart(2, "0");
         const day = String(date.getDate()).padStart(2, "0");
         return `${date.getFullYear()}-${month}-${day}`;
+    }
+
+    function dateOffsetInput(offsetDays) {
+        const date = new Date();
+        date.setDate(date.getDate() + offsetDays);
+        return formatDateInput(date.getTime());
+    }
+
+    function formatLocalDate(value) {
+        if (!value) return "Не указан";
+        const [year, month, day] = value.split("-").map(Number);
+        return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short", year: "numeric" })
+            .format(new Date(year, month - 1, day));
     }
 
     function truckPhoto(truck) {
@@ -1113,6 +1161,89 @@
           <p class="calculator-disclaimer">Это демонстрационный расчёт, а не тариф или коммерческое предложение перевозчика. Дистанция оценивается по координатам городов, а итоговая цена зависит от маршрута, груза, сезона, доступности транспорта и условий перевозки.</p>`;
     }
 
+    function renderDocumentsPage() {
+        const tripOptions = trucks.map((truck) =>
+            `<option value="${escapeHTML(truck.id)}">${escapeHTML(truck.id)} · ${escapeHTML(truck.from)} → ${escapeHTML(truck.to)}</option>`
+        ).join("");
+        const rows = [...documents].sort((first, second) =>
+            (first.status === "ready" ? 1 : 0) - (second.status === "ready" ? 1 : 0)
+            || (first.dueDate || "9999-12-31").localeCompare(second.dueDate || "9999-12-31"))
+            .map((item) => {
+                const trip = trucks.find((truck) => truck.id === item.tripId);
+                const status = item.status === "ready" ? "Готов" : "Ожидает";
+                return `<tr>
+                    <td><strong>${escapeHTML(item.type)}</strong><small>${escapeHTML(item.id)}</small></td>
+                    <td>${trip ? `<strong>${escapeHTML(trip.id)}</strong><small>${escapeHTML(trip.from)} → ${escapeHTML(trip.to)}</small>` : `<span class="muted-value">Рейс удалён</span>`}</td>
+                    <td>${item.dueDate ? escapeHTML(formatLocalDate(item.dueDate)) : "Без срока"}</td>
+                    <td><span class="document-status ${item.status}">${status}</span>${item.notes ? `<small>${escapeHTML(item.notes)}</small>` : ""}</td>
+                    <td><button class="table-action" data-action="toggle-document-status" data-id="${escapeHTML(item.id)}">${item.status === "ready" ? "Вернуть в работу" : "Отметить готовым"}</button><button class="table-action danger" data-action="delete-document" data-id="${escapeHTML(item.id)}">Удалить</button></td>
+                </tr>`;
+            }).join("");
+        const pending = documents.filter((item) => item.status === "pending").length;
+        const dueSoon = documents.filter((item) => item.status === "pending" && item.dueDate
+            && item.dueDate >= dateOffsetInput(0) && item.dueDate <= dateOffsetInput(7)).length;
+        return `${makePageHeader("Документы по рейсам", "Соберите комплект документов для каждой перевозки и отмечайте готовность.", "Экспорт CSV", "export-documents")}
+          <div class="page-stat-row"><article><span>Всего записей</span><strong>${documents.length}</strong></article><article><span>Нужно подготовить</span><strong>${pending}</strong></article><article><span>Срок в ближайшие 7 дней</span><strong>${dueSoon}</strong></article><article><span>Готово</span><strong>${documents.length - pending}</strong></article></div>
+          <section class="panel document-guide"><div class="document-guide-icon">i</div><div><strong>Удобный чек-лист, а не электронный архив</strong><p>Здесь можно отслеживать CMR, ТТН, счета и разрешения. Файлы документов в демо-версии не загружаются; перечень и статусы сохраняются только в этом браузере. Проверяйте требования для конкретного маршрута.</p></div></section>
+          <form class="panel workflow-form" id="documentForm">
+            <div class="data-panel-head"><div><h2>Добавить в чек-лист</h2><p>Свяжите документ с рейсом, задайте срок и оставьте заметку</p></div></div>
+            <div class="workflow-fields">
+              <label class="form-field"><span>Рейс</span><select name="tripId" required ${trucks.length ? "" : "disabled"}>${trucks.length ? `<option value="">Выберите рейс</option>${tripOptions}` : `<option value="">Сначала создайте рейс</option>`}</select></label>
+              <label class="form-field"><span>Тип документа</span><select name="type" required>${documentTypes.map((type) => `<option>${escapeHTML(type)}</option>`).join("")}</select></label>
+              <label class="form-field"><span>Срок подготовки</span><input name="dueDate" type="date"></label>
+              <label class="form-field"><span>Заметка</span><input name="notes" maxlength="160" placeholder="Например, оригинал передать водителю"></label>
+              <button class="button button-primary" type="submit" ${trucks.length ? "" : "disabled"}>＋ Добавить документ</button>
+            </div>
+          </form>
+          <div class="panel data-panel"><div class="data-panel-head"><div><h2>Комплект документов</h2><p>Отметьте готовность каждого документа перед отправлением</p></div><span class="table-total">${documents.length} записей</span></div><div class="responsive-table"><table class="data-table"><thead><tr><th>ДОКУМЕНТ</th><th>РЕЙС</th><th>СРОК</th><th>ГОТОВНОСТЬ И ЗАМЕТКА</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="5" class="table-empty">Чек-лист пока пуст. Добавьте первый документ для рейса.</td></tr>`}</tbody></table></div></div>`;
+    }
+
+    function renderMaintenancePage() {
+        const truckOptions = trucks.map((truck) =>
+            `<option value="${escapeHTML(truck.id)}">${escapeHTML(truck.id)} · ${escapeHTML(truck.plate)}</option>`
+        ).join("");
+        const today = dateOffsetInput(0);
+        const nextMonth = dateOffsetInput(30);
+        const planned = maintenance.filter((item) => item.status === "planned");
+        const dueSoon = planned.filter((item) => item.dueDate >= today && item.dueDate <= nextMonth).length;
+        const completedCost = maintenance.filter((item) => item.status === "done")
+            .reduce((total, item) => total + (item.cost || 0), 0);
+        const rows = [...maintenance].sort((first, second) =>
+            (first.status === "planned" ? 0 : 1) - (second.status === "planned" ? 0 : 1)
+            || first.dueDate.localeCompare(second.dueDate))
+            .map((item) => {
+                const truck = trucks.find((record) => record.id === item.truckId);
+                const overdue = item.status === "planned" && item.dueDate < today;
+                const status = item.status === "done" ? "Выполнено" : overdue ? "Просрочено" : "Запланировано";
+                const odometer = Number.isFinite(item.odometer) ? `${item.odometer.toLocaleString("ru-RU")} км` : "Не указан";
+                return `<tr>
+                    <td><strong>${truck ? escapeHTML(truck.id) : escapeHTML(item.truckId)}</strong><small>${truck ? escapeHTML(truck.plate) : "Машина удалена"}</small></td>
+                    <td><strong>${escapeHTML(item.type)}</strong>${item.notes ? `<small>${escapeHTML(item.notes)}</small>` : ""}</td>
+                    <td>${escapeHTML(formatLocalDate(item.dueDate))}${overdue ? `<small class="overdue-note">Срок прошёл</small>` : ""}</td>
+                    <td>${escapeHTML(odometer)}</td>
+                    <td>${item.cost ? currency(item.cost) : "—"}</td>
+                    <td><span class="maintenance-status ${item.status === "done" ? "done" : overdue ? "overdue" : "planned"}">${status}</span></td>
+                    <td>${item.status === "planned" ? `<button class="table-action success" data-action="complete-maintenance" data-id="${escapeHTML(item.id)}">Выполнено</button>` : ""}<button class="table-action danger" data-action="delete-maintenance" data-id="${escapeHTML(item.id)}">Удалить</button></td>
+                </tr>`;
+            }).join("");
+        return `${makePageHeader("Обслуживание автопарка", "Планируйте ТО, следите за сроками и учитывайте расходы по каждой машине.", "Экспорт CSV", "export-maintenance")}
+          <div class="page-stat-row"><article><span>Запланировано</span><strong>${planned.length}</strong></article><article><span>Срок в ближайшие 30 дней</span><strong>${dueSoon}</strong></article><article><span>Выполнено</span><strong>${maintenance.length - planned.length}</strong></article><article><span>Расходы по выполненным</span><strong>${currency(completedCost)}</strong></article></div>
+          <form class="panel workflow-form" id="maintenanceForm">
+            <div class="data-panel-head"><div><h2>Запланировать обслуживание</h2><p>Добавьте напоминание и стоимость, если она известна</p></div></div>
+            <div class="workflow-fields">
+              <label class="form-field"><span>Машина</span><select name="truckId" required ${trucks.length ? "" : "disabled"}>${trucks.length ? `<option value="">Выберите машину</option>${truckOptions}` : `<option value="">Автопарк пуст</option>`}</select></label>
+              <label class="form-field"><span>Тип работ</span><select name="type" required>${maintenanceTypes.map((type) => `<option>${escapeHTML(type)}</option>`).join("")}</select></label>
+              <label class="form-field"><span>Дата обслуживания</span><input name="dueDate" type="date" required></label>
+              <label class="form-field"><span>Пробег, км</span><input name="odometer" type="number" min="0" max="2000000" step="1" placeholder="Необязательно"></label>
+              <label class="form-field"><span>Стоимость, ₽</span><input name="cost" type="number" min="0" max="100000000" step="100" placeholder="Необязательно"></label>
+              <label class="form-field"><span>Заметка</span><input name="notes" maxlength="160" placeholder="Работы или комментарий"></label>
+              <button class="button button-primary" type="submit" ${trucks.length ? "" : "disabled"}>＋ Запланировать</button>
+            </div>
+          </form>
+          <div class="panel data-panel"><div class="data-panel-head"><div><h2>История и план</h2><p>Просроченные пункты отмечены отдельно — проверьте актуальность расписания</p></div><span class="table-total">${maintenance.length} записей</span></div><div class="responsive-table"><table class="data-table"><thead><tr><th>МАШИНА</th><th>РАБОТЫ</th><th>ДАТА</th><th>ПРОБЕГ</th><th>СТОИМОСТЬ</th><th>СТАТУС</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="7" class="table-empty">Записей пока нет. Добавьте обслуживание для машины.</td></tr>`}</tbody></table></div></div>
+          <p class="calculator-disclaimer">Напоминания и суммы ведутся вручную и сохраняются только в этом браузере. Это не телематика и не автоматическое предсказание неисправностей.</p>`;
+    }
+
     function renderSettingsPage() {
         const account = readSavedUser();
         let company = account?.company || "СеверТранс";
@@ -1137,6 +1268,8 @@
         finance: renderFinancePage,
         calculator: renderCalculatorPage,
         market: renderMarketPage,
+        documents: renderDocumentsPage,
+        maintenance: renderMaintenancePage,
         settings: renderSettingsPage
     };
 
@@ -1211,6 +1344,51 @@
                 ? "Предложение опубликовано. Есть совпадение с подпиской; Telegram не подключён."
                 : "Предложение сохранено в локальной демо-бирже.");
         });
+        byId("workspacePage").querySelector("#documentForm")?.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const values = Object.fromEntries(new FormData(event.currentTarget).entries());
+            const documentRecord = {
+                id: `DOC-${Date.now()}`,
+                tripId: String(values.tripId),
+                type: String(values.type),
+                status: "pending",
+                dueDate: String(values.dueDate),
+                notes: String(values.notes).trim(),
+                createdAt: Date.now()
+            };
+            const nextDocuments = [documentRecord, ...documents];
+            if (!saveLocalCollection(storageKeys.documents, nextDocuments, "документ")) return;
+            documents = nextDocuments;
+            renderWorkspacePage("documents");
+            showToast(`${documentRecord.type} добавлен в чек-лист рейса ${documentRecord.tripId}.`);
+        });
+        byId("workspacePage").querySelector("#maintenanceForm")?.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const values = Object.fromEntries(new FormData(event.currentTarget).entries());
+            const cost = values.cost === "" ? null : Number(values.cost);
+            const odometer = values.odometer === "" ? null : Number(values.odometer);
+            if (cost !== null && (!Number.isFinite(cost) || cost < 0 || cost > 100_000_000)
+                || odometer !== null && (!Number.isFinite(odometer) || odometer < 0 || odometer > 2_000_000)) {
+                showToast("Проверьте стоимость и пробег: значения должны быть в допустимых пределах.", true);
+                return;
+            }
+            const maintenanceRecord = {
+                id: `SRV-${Date.now()}`,
+                truckId: String(values.truckId),
+                type: String(values.type),
+                dueDate: String(values.dueDate),
+                odometer,
+                cost,
+                status: "planned",
+                notes: String(values.notes).trim(),
+                createdAt: Date.now()
+            };
+            const nextMaintenance = [maintenanceRecord, ...maintenance];
+            if (!saveLocalCollection(storageKeys.maintenance, nextMaintenance, "обслуживание")) return;
+            maintenance = nextMaintenance;
+            renderWorkspacePage("maintenance");
+            showToast(`Обслуживание ${maintenanceRecord.truckId} запланировано на ${formatLocalDate(maintenanceRecord.dueDate)}.`);
+        });
         byId("workspacePage").querySelectorAll("[data-market-kind]").forEach((button) => {
             button.addEventListener("click", () => {
                 byId("workspacePage").querySelectorAll("[data-market-kind]").forEach((item) =>
@@ -1265,6 +1443,66 @@
         if (action === "delete-truck") return deleteRecord("truck", id);
         if (action === "delete-driver") return deleteRecord("driver", id);
         if (action === "delete-client") return deleteRecord("client", id);
+        if (action === "toggle-document-status") {
+            const record = documents.find((item) => item.id === id);
+            if (!record) return;
+            const nextDocuments = documents.map((item) => item.id === id
+                ? { ...item, status: item.status === "ready" ? "pending" : "ready" }
+                : item);
+            if (saveLocalCollection(storageKeys.documents, nextDocuments, "статус документа")) {
+                documents = nextDocuments;
+                renderWorkspacePage("documents");
+                showToast(`Документ ${record.type}: ${record.status === "ready" ? "возвращён в работу" : "отмечен готовым"}.`);
+            }
+            return;
+        }
+        if (action === "delete-document") {
+            const nextDocuments = documents.filter((item) => item.id !== id);
+            if (saveLocalCollection(storageKeys.documents, nextDocuments, "список документов")) {
+                documents = nextDocuments;
+                renderWorkspacePage("documents");
+                showToast("Запись удалена из чек-листа.");
+            }
+            return;
+        }
+        if (action === "complete-maintenance") {
+            const nextMaintenance = maintenance.map((item) => item.id === id
+                ? { ...item, status: "done", completedAt: Date.now() }
+                : item);
+            if (saveLocalCollection(storageKeys.maintenance, nextMaintenance, "статус обслуживания")) {
+                maintenance = nextMaintenance;
+                renderWorkspacePage("maintenance");
+                showToast("Обслуживание отмечено выполненным.");
+            }
+            return;
+        }
+        if (action === "delete-maintenance") {
+            const nextMaintenance = maintenance.filter((item) => item.id !== id);
+            if (saveLocalCollection(storageKeys.maintenance, nextMaintenance, "список обслуживания")) {
+                maintenance = nextMaintenance;
+                renderWorkspacePage("maintenance");
+                showToast("Запись обслуживания удалена.");
+            }
+            return;
+        }
+        if (action === "export-documents") return exportCSV(documents.map((item) => ({
+            id: item.id,
+            trip: item.tripId,
+            type: item.type,
+            dueDate: item.dueDate,
+            status: item.status === "ready" ? "Готов" : "Ожидает",
+            notes: item.notes
+        })), "dokumenty-transline.csv");
+        if (action === "export-maintenance") return exportCSV(maintenance.map((item) => ({
+            id: item.id,
+            truck: item.truckId,
+            type: item.type,
+            dueDate: item.dueDate,
+            odometer: item.odometer ?? "",
+            cost: item.cost ?? "",
+            status: item.status === "done" ? "Выполнено" : "Запланировано",
+            notes: item.notes
+        })), "obsluzhivanie-transline.csv");
         if (action === "complete-trip") return completeTrip(id);
         if (action === "cancel-trip") return cancelTrip(id);
         if (action === "export-trips") return exportCSV(trucks.map((truck) => ({
@@ -1508,7 +1746,7 @@
     }
 
     function exportBackup() {
-        const backup = { app: "transline-demo", version: 1, exportedAt: new Date().toISOString(), trucks, drivers, clients, activities, routeSubscriptions, marketOffers, driverRatings };
+        const backup = { app: "transline-demo", version: 1, exportedAt: new Date().toISOString(), trucks, drivers, clients, activities, routeSubscriptions, marketOffers, driverRatings, documents, maintenance };
         downloadFile(JSON.stringify(backup, null, 2), "transline-backup.json", "application/json");
     }
 
@@ -1533,7 +1771,9 @@
                     && ["cargo", "vehicle"].includes(item.kind) && Number.isFinite(item.createdAt)
                     && (item.price === null || Number.isFinite(item.price)))))
                 && (!backup.driverRatings || (Array.isArray(backup.driverRatings) && backup.driverRatings.every((item) => item
-                    && typeof item.driverId === "string" && Number.isInteger(item.value) && item.value >= 1 && item.value <= 5 && Number.isFinite(item.updatedAt))));
+                    && typeof item.driverId === "string" && Number.isInteger(item.value) && item.value >= 1 && item.value <= 5 && Number.isFinite(item.updatedAt))))
+                && (!backup.documents || (Array.isArray(backup.documents) && backup.documents.every(isValidDocument)))
+                && (!backup.maintenance || (Array.isArray(backup.maintenance) && backup.maintenance.every(isValidMaintenance)));
             if (!isValid) throw new Error("Это не резервная копия ТрансЛайн или файл содержит неверные данные.");
             const nextActivities = backup.activities || [];
             const entries = [
@@ -1543,7 +1783,9 @@
                 [storageKeys.activity, nextActivities],
                 [storageKeys.routeSubscriptions, backup.routeSubscriptions || []],
                 [storageKeys.marketOffers, backup.marketOffers || []],
-                [storageKeys.driverRatings, backup.driverRatings || []]
+                [storageKeys.driverRatings, backup.driverRatings || []],
+                [storageKeys.documents, backup.documents || []],
+                [storageKeys.maintenance, backup.maintenance || []]
             ];
             const previous = entries.map(([key]) => [key, localStorage.getItem(key)]);
             try {
@@ -1562,6 +1804,8 @@
             routeSubscriptions = backup.routeSubscriptions || [];
             marketOffers = backup.marketOffers || [];
             driverRatings = backup.driverRatings || [];
+            documents = backup.documents || [];
+            maintenance = backup.maintenance || [];
             selectedTruckId = trucks[0]?.id ?? null;
             updateMetrics();
             renderFleet();
@@ -1588,7 +1832,7 @@
     }
 
     function resetDemoData() {
-        if (!window.confirm("Сбросить машины, водителей и клиентов к исходным демо-данным?")) return;
+        if (!window.confirm("Сбросить машины, водителей, клиентов, документы и обслуживание к исходным демо-данным?")) return;
         trucks = normalizeTrucks(starterTrucks);
         drivers = starterDrivers.map((item) => ({ ...item }));
         clients = starterClients.map((item) => ({ ...item }));
@@ -1601,9 +1845,11 @@
         routeSubscriptions = [];
         marketOffers = [];
         driverRatings = [];
+        documents = starterDocuments.map((item) => ({ ...item }));
+        maintenance = starterMaintenance.map((item) => ({ ...item }));
         selectedTruckId = trucks[0].id;
         try {
-            [storageKeys.trucks, storageKeys.drivers, storageKeys.clients, storageKeys.activity, storageKeys.routeSubscriptions, storageKeys.marketOffers, storageKeys.driverRatings].forEach((key) => localStorage.removeItem(key));
+            [storageKeys.trucks, storageKeys.drivers, storageKeys.clients, storageKeys.activity, storageKeys.routeSubscriptions, storageKeys.marketOffers, storageKeys.driverRatings, storageKeys.documents, storageKeys.maintenance].forEach((key) => localStorage.removeItem(key));
         } catch (error) {
             console.error("Не удалось очистить сохранённые демо-данные.", error);
             showToast("Не удалось очистить браузерное хранилище.", true);
@@ -2139,4 +2385,12 @@
     renderFleet();
     renderRoutes();
     renderActivityList();
+
+    const cutoff = Date.now() - 365 * 24 * 60 * 60 * 1000;
+    document.querySelectorAll("[data-announcement-date]").forEach((entry) => {
+        const itemDate = new Date(entry.dataset.announcementDate).getTime();
+        if (!Number.isFinite(itemDate) || itemDate < cutoff) {
+            entry.hidden = true;
+        }
+    });
 })();

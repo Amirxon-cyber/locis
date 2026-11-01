@@ -97,6 +97,17 @@
                         <path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-6M16 7h3v3" />
                     </svg><span>Ставки и маршруты</span>
                 </button>
+                <button class="nav-link" data-section="Документы" data-page="documents">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" />
+                        <path d="M14 4v4h4M8 12h8m-8 4h8" />
+                    </svg><span>Документы</span>
+                </button>
+                <button class="nav-link" data-section="Обслуживание" data-page="maintenance">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m14.5 6.5 3-3a5 5 0 0 0-6.3 6.3l-7.5 7.5a2.1 2.1 0 0 0 3 3l7.5-7.5a5 5 0 0 0 6.3-6.3l-3 3-3-3Z" />
+                    </svg><span>Обслуживание</span>
+                </button>
                 <button class="nav-link" data-section="Настройки" data-page="settings">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <circle cx="12" cy="12" r="3" />
@@ -210,6 +221,170 @@
                                 class="portal-shortcut-icon blue">₽</span><span><strong>Калькулятор</strong><small>Оценка
                                     стоимости рейса</small></span><b>→</b></button>
                     </nav>
+
+                    <section class="overview-aux" aria-label="Дополнительная сводка деятельности">
+                        <article class="aux-card accent">
+                            <p class="aux-label">ПЛАН НА ДЕНЬ</p>
+                            <h3>12 рейсов</h3>
+                            <div class="aux-progress">
+                                <span style="width:72%"></span>
+                            </div>
+                            <small>7 выполнено · 5 в работе</small>
+                        </article>
+                        <article class="aux-card">
+                            <p class="aux-label">СКЛАД</p>
+                            <h3>86%</h3>
+                            <div class="aux-meta"><strong>238</strong> паллет загружено</div>
+                        </article>
+                        <article class="aux-card">
+                            <p class="aux-label">ОБСЛУЖИВАНИЕ</p>
+                            <h3>3 машины</h3>
+                            <div class="aux-meta success">Две готовы к выезду</div>
+                        </article>
+                    </section>
+
+                    <section class="market-brief" aria-label="Быстрые инструменты логистического поиска">
+                        <div class="market-brief-top">
+                            <div class="lang-switch" aria-label="Выбор языка">
+                                <a href="/en/" class="lang-link">English</a>
+                                <a href="/ru/" class="lang-link active" aria-current="page">Русский</a>
+                            </div>
+                            <div class="currency-widget">
+                                <span>Курс валют</span>
+                                <a href="https://cbr.ru/" target="_blank" rel="noopener noreferrer">USD 90.42 · EUR 98.10</a>
+                            </div>
+                            <a href="#support" class="support-link">Обратная связь</a>
+                        </div>
+
+                        <div class="market-search-panel">
+                            <div class="market-search-head">
+                                <p class="portal-eyebrow">ЛИВЫЙ ПОИСК</p>
+                                <h2>Откуда, куда, что везём</h2>
+                            </div>
+                            <div class="market-search-form">
+                                <label>
+                                    <span>Откуда</span>
+                                    <input type="text" value="Ташкент" aria-label="Откуда">
+                                </label>
+                                <label>
+                                    <span>Куда</span>
+                                    <input type="text" value="Москва" aria-label="Куда">
+                                </label>
+                                <label>
+                                    <span>Что везём</span>
+                                    <input type="text" value="Текстиль, стройматериалы" aria-label="Что везём">
+                                </label>
+                                <button class="button button-primary" type="button">Найти</button>
+                            </div>
+                        </div>
+
+                        <div class="feature-strip" aria-label="Приоритетные возможности">
+                            <article class="feature-pill">
+                                <span class="feature-emoji">🇺🇿</span>
+                                <div><strong>Узбекский язык</strong><small>Поддержка для рынка Узбекистана</small></div>
+                            </article>
+                            <article class="feature-pill">
+                                <span class="feature-emoji">🚚</span>
+                                <div><strong>Транзит</strong><small>Маршруты и согласования по сети</small></div>
+                            </article>
+                            <article class="feature-pill">
+                                <span class="feature-emoji">✓</span>
+                                <div><strong>Проверено</strong><small>Подтверждённые компании и контакты</small></div>
+                            </article>
+                            <article class="feature-pill">
+                                <span class="feature-emoji">✉️</span>
+                                <div><strong>Подписка на маршрут</strong><small>Уведомления в почту и Telegram</small></div>
+                            </article>
+                        </div>
+                    </section>
+
+                    <section class="catalog-panel" aria-label="Список компаний и проверенных поставщиков">
+                        <div class="panel-heading">
+                            <div>
+                                <div class="panel-title-row">
+                                    <h2>Компании в каталоге</h2>
+                                    <span class="live-pill">Проверено</span>
+                                </div>
+                                <p>Актуальные участники с проверенными контактами</p>
+                            </div>
+                        </div>
+                        <div class="company-card-list">
+                            <article class="company-card">
+                                <div class="company-card-top">
+                                    <span class="company-logo">SC</span>
+                                    <div>
+                                        <strong>Samarkand Cargo</strong>
+                                        <small>Ташкент · транспортная компания</small>
+                                    </div>
+                                </div>
+                                <div class="company-card-meta">
+                                    <span class="verified-tag">✓ Проверено</span>
+                                    <time>Обновлено: 01.11.2026</time>
+                                </div>
+                            </article>
+                            <article class="company-card">
+                                <div class="company-card-top">
+                                    <span class="company-logo alt">TR</span>
+                                    <div>
+                                        <strong>Transit Road</strong>
+                                        <small>Самарканд · международные перевозки</small>
+                                    </div>
+                                </div>
+                                <div class="company-card-meta">
+                                    <span class="verified-tag">✓ Проверено</span>
+                                    <time>Обновлено: 28.10.2026</time>
+                                </div>
+                            </article>
+                            <article class="company-card">
+                                <div class="company-card-top">
+                                    <span class="company-logo">FG</span>
+                                    <div>
+                                        <strong>Freight Group</strong>
+                                        <small>Бухара · логистика и экспедирование</small>
+                                    </div>
+                                </div>
+                                <div class="company-card-meta">
+                                    <span class="verified-tag">✓ Проверено</span>
+                                    <time>Обновлено: 03.11.2026</time>
+                                </div>
+                            </article>
+                        </div>
+                    </section>
+
+                    <section class="announcement-panel" aria-labelledby="announcementsTitle">
+                        <div class="panel-heading">
+                            <div>
+                                <div class="panel-title-row">
+                                    <h2 id="announcementsTitle">Объявления и события</h2>
+                                </div>
+                                <p>Показываются только актуальные записи за последний год</p>
+                            </div>
+                        </div>
+                        <div class="announcement-list">
+                            <article class="announcement-item" data-announcement-date="2026-11-01">
+                                <span class="announcement-date">01.11.2026</span>
+                                <div>
+                                    <strong>Запуск нового маршрута Ташкент → Москва</strong>
+                                    <small>Подключены новые контейнерные рейсы и консультации по загрузке.</small>
+                                </div>
+                            </article>
+                            <article class="announcement-item" data-announcement-date="2020-09-10">
+                                <span class="announcement-date">10.09.2020</span>
+                                <div>
+                                    <strong>Старое предложение</strong>
+                                    <small>Эта запись скрывается, потому что она старше года.</small>
+                                </div>
+                            </article>
+                            <article class="announcement-item" data-announcement-date="2017-04-05">
+                                <span class="announcement-date">05.04.2017</span>
+                                <div>
+                                    <strong>Архивное событие</strong>
+                                    <small>Эта запись не выводится на главной странице.</small>
+                                </div>
+                            </article>
+                        </div>
+                    </section>
+
                     <section class="welcome-row">
                         <div>
                             <p class="eyebrow"><span class="eyebrow-dot"></span> <span id="todayDate"></span>
@@ -278,6 +453,48 @@
                             <div class="metric-foot"><span class="metric-track violet-track"><i
                                         style="width:74%"></i></span><span>Из 24 запланированных</span></div>
                         </article>
+                    </section>
+
+                    <section class="panel route-feed" aria-labelledby="routeFeedTitle">
+                        <div class="panel-heading">
+                            <div>
+                                <div class="panel-title-row">
+                                    <h2 id="routeFeedTitle">Активные маршруты</h2>
+                                </div>
+                                <p>Короткая сводка по текущим перевозкам</p>
+                            </div>
+                            <button class="small-icon-button" type="button" aria-label="Обновить маршруты"
+                                title="Обновить маршруты"><svg viewBox="0 0 24 24">
+                                    <path d="M20 7v5h-5M4 17v-5h5" />
+                                    <path d="M5.5 9A7 7 0 0 1 17 6l3 6M4 12l3 6a7 7 0 0 0 11.5-3" />
+                                </svg></button>
+                        </div>
+                        <div class="route-feed-list">
+                            <div class="route-item">
+                                <div class="route-item-main">
+                                    <span class="route-tag">R-19</span>
+                                    <strong>Ташкент → Москва</strong>
+                                </div>
+                                <div class="route-item-meta"><span>Петросян М.</span><span class="status status-ok">В пути</span></div>
+                                <div class="route-item-trail"><small>ETA 14:40</small><strong>3,2 т</strong></div>
+                            </div>
+                            <div class="route-item">
+                                <div class="route-item-main">
+                                    <span class="route-tag">R-22</span>
+                                    <strong>Екатеринбург → Санкт-Петербург</strong>
+                                </div>
+                                <div class="route-item-meta"><span>Лосев К.</span><span class="status status-warn">Проверка</span></div>
+                                <div class="route-item-trail"><small>ETA 17:10</small><strong>4,8 т</strong></div>
+                            </div>
+                            <div class="route-item">
+                                <div class="route-item-main">
+                                    <span class="route-tag">R-27</span>
+                                    <strong>Новосибирск → Самара</strong>
+                                </div>
+                                <div class="route-item-meta"><span>Кузнецов Д.</span><span class="status status-ok">Выполнен</span></div>
+                                <div class="route-item-trail"><small>ETA 12:50</small><strong>2,6 т</strong></div>
+                            </div>
+                        </div>
                     </section>
 
                     <section class="panel operational-alerts" id="operationalAlerts" aria-labelledby="operationalAlertsTitle">
