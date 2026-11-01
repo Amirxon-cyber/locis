@@ -7,7 +7,8 @@
         trucks: "transline-demo-trucks",
         drivers: "transline-demo-drivers",
         clients: "transline-demo-clients",
-        company: "transline-demo-company"
+        company: "transline-demo-company",
+        activity: "transline-demo-activity"
     };
     const starterTrucks = [
         { id: "RF-204", plate: "А781МР 799", driver: "Сергей Козлов", from: "Москва", to: "Казань", location: "Трасса М-7, 42 км", status: "moving", eta: "14:30", progress: 68, x: 54, y: 48 },
@@ -42,6 +43,11 @@
     let trucks = loadTrucks();
     let drivers = loadCollection(storageKeys.drivers, starterDrivers, (item) => item && ["id", "name", "phone", "license", "status"].every((key) => typeof item[key] === "string"));
     let clients = loadCollection(storageKeys.clients, starterClients, (item) => item && ["id", "name", "contact", "email", "phone", "city"].every((key) => typeof item[key] === "string") && Number.isFinite(item.orders));
+    let activities = loadCollection(storageKeys.activity, [
+        { id: "EV-1", title: "Доставка завершена", description: "RF-204 доставил груз в Казань · Сергей Козлов", kind: "delivered", createdAt: Date.now() - 12 * 60_000 },
+        { id: "EV-2", title: "Новый рейс", description: "RF-118 выехал из Москвы · Андрей Морозов", kind: "departed", createdAt: Date.now() - 34 * 60_000 },
+        { id: "EV-3", title: "Задержка в пути", description: "RF-073 задерживается на трассе М-7 · Иван Петров", kind: "warning", createdAt: Date.now() - 48 * 60_000 }
+    ], (item) => item && ["id", "title", "description", "kind"].every((key) => typeof item[key] === "string") && Number.isFinite(item.createdAt));
     let activeFilter = "all";
     let selectedTruckId = trucks[0]?.id ?? null;
     let searchQuery = "";
@@ -303,6 +309,84 @@
         return new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }).format(value);
     }
 
+    function relativeTime(timestamp) {
+        const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60_000));
+        if (minutes < 1) return "только что";
+        if (minutes < 60) return `${minutes} мин. назад`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours} ч. назад`;
+        return new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(timestamp);
+    }
+
+    function renderActivityList() {
+        const containers = [byId("activityList"), byId("activityModalList")];
+        containers.forEach((container) => {
+            if (!container) return;
+            container.replaceChildren();
+            activities.slice(0, container.id === "activityList" ? 3 : 30).forEach((activity) => {
+                const item = document.createElement("div");
+                item.className = "activity-item";
+                const icon = document.createElement("span");
+                icon.className = `activity-icon ${activity.kind}`;
+                icon.textContent = activity.kind === "delivered" ? "✓" : activity.kind === "warning" ? "!" : activity.kind === "created" ? "+" : "↗";
+                const copy = document.createElement("div");
+                const title = document.createElement("p");
+                const strong = document.createElement("strong");
+                strong.textContent = activity.title;
+                title.append(strong, document.createTextNode(` · ${activity.description}`));
+                const time = document.createElement("time");
+                time.textContent = relativeTime(activity.createdAt);
+                copy.append(title, time);
+                item.append(icon, copy);
+                container.append(item);
+            });
+        });
+    }
+
+    function addActivity(title, description, kind = "departed") {
+        activities.unshift({
+            id: `EV-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            title,
+            description,
+            kind,
+            createdAt: Date.now()
+        });
+        activities = activities.slice(0, 100);
+        saveCollection(storageKeys.activity, activities, []);
+        renderActivityList();
+    }
+
+    function showTruckDetails(truck) {
+        byId("detailsTitle").textContent = `${truck.id} · ${truck.plate}`;
+        byId("detailsSubtitle").textContent = `${truck.from} → ${truck.to}`;
+        const rows = [
+            ["Статус", statusLabels[truck.status]],
+            ["Водитель", truck.driver],
+            ["Местоположение", truck.location],
+            ["Ожидаемое прибытие", truck.eta],
+            ["Прогресс рейса", `${truck.progress}%`],
+            ["Клиент", truck.client || "Не указан"],
+            ["Стоимость", truck.amount ? currency(truck.amount) : "Не указана"]
+        ];
+        const list = byId("truckDetailsList");
+        list.replaceChildren();
+        rows.forEach(([label, value]) => {
+            const row = document.createElement("div");
+            row.className = "detail-row";
+            const name = document.createElement("span");
+            name.textContent = label;
+            const content = document.createElement("strong");
+            content.textContent = value;
+            row.append(name, content);
+            list.append(row);
+        });
+        byId("editSelectedTruck").onclick = () => {
+            closeModal(byId("truckDetailsModal"));
+            openRecordModal("truck", truck.id);
+        };
+        openModal("truckDetailsModal");
+    }
+
     function makePageHeader(title, description, actionLabel = "", action = "") {
         return `<div class="workspace-heading"><div><p class="workspace-eyebrow">ТРАНСЛАЙН · УПРАВЛЕНИЕ</p><h1>${title}</h1><p>${description}</p></div><div class="workspace-heading-actions"><label class="page-search"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4 4"/></svg><input id="pageSearch" type="search" placeholder="Поиск..." aria-label="Поиск на странице"></label>${actionLabel ? `<button class="button button-primary" data-action="${action}"><span>＋</span>${actionLabel}</button>` : ""}</div></div>`;
     }
@@ -321,13 +405,13 @@
     }
 
     function renderTripsPage() {
-        const rows = trucks.filter((truck) => truck.status !== "stopped").map((truck) => `<tr>
+        const rows = trucks.map((truck) => `<tr>
             <td><strong>${escapeHTML(truck.id)}</strong><small>${escapeHTML(truck.plate)}</small></td>
             <td><span class="route-city">${escapeHTML(truck.from)} <b>→</b> ${escapeHTML(truck.to)}</span><small>${escapeHTML(truck.location)}</small></td>
             <td>${escapeHTML(truck.driver)}</td><td>${escapeHTML(truck.eta)}</td>
             <td><div class="table-progress"><span><i style="width:${Math.max(0, Math.min(100, truck.progress))}%"></i></span>${truck.progress}%</div></td>
             <td><span class="table-status ${escapeHTML(truck.status)}">${escapeHTML(statusLabels[truck.status])}</span></td>
-            <td><button class="table-action" data-action="edit-truck" data-id="${escapeHTML(truck.id)}">Открыть</button>${truck.status === "delivered" ? "" : `<button class="table-action success" data-action="complete-trip" data-id="${escapeHTML(truck.id)}">Доставлен</button>`}</td>
+            <td><button class="table-action" data-action="edit-truck" data-id="${escapeHTML(truck.id)}">Открыть</button>${truck.status === "delivered" || truck.status === "stopped" ? "" : `<button class="table-action success" data-action="complete-trip" data-id="${escapeHTML(truck.id)}">Доставлен</button>`}</td>
         </tr>`).join("");
         return `${makePageHeader("Рейсы", "Планируйте перевозки и следите за выполнением заказов.", "Создать рейс", "add-trip")}
           <div class="page-toolbar"><div class="segmented-control"><button class="segment active" data-trip-filter="active">Активные</button><button class="segment" data-trip-filter="all">Все рейсы</button><button class="segment" data-trip-filter="delayed">Задержки</button><button class="segment" data-trip-filter="delivered">Доставлены</button></div><button class="button button-outline" data-action="export-trips">↓ Экспорт CSV</button></div>
@@ -379,10 +463,15 @@
 
     function renderSettingsPage() {
         const account = readSavedUser();
-        const company = account?.company || localStorage.getItem(storageKeys.company) || "СеверТранс";
+        let company = account?.company || "СеверТранс";
+        try {
+            company = account?.company || localStorage.getItem(storageKeys.company) || company;
+        } catch (error) {
+            console.error("Не удалось прочитать настройки компании.", error);
+        }
         return `${makePageHeader("Настройки", "Персонализируйте рабочее пространство и сохраните данные.")}
           <div class="settings-grid"><article class="panel settings-card"><div class="settings-title"><span class="settings-icon">⌂</span><span><strong>Рабочее пространство</strong><small>Основная информация о компании</small></span></div><form id="companyForm" class="settings-form"><label class="form-field"><span>Название компании</span><input id="settingsCompany" value="${escapeHTML(company)}" maxlength="60" required></label><button class="button button-primary" type="submit">Сохранить изменения</button></form></article>
-          <article class="panel settings-card"><div class="settings-title"><span class="settings-icon blue">⇩</span><span><strong>Данные и резервная копия</strong><small>Демо-данные хранятся в этом браузере</small></span></div><p class="settings-description">Сохраните копию рейсов, машин, водителей и клиентов в JSON-файле или сбросьте демонстрационные изменения.</p><div class="settings-actions"><button class="button button-outline" data-action="export-backup">Скачать резервную копию</button><button class="button button-outline danger-outline" data-action="reset-data">Сбросить изменения</button></div></article>
+          <article class="panel settings-card"><div class="settings-title"><span class="settings-icon blue">⇩</span><span><strong>Данные и резервная копия</strong><small>Демо-данные хранятся в этом браузере</small></span></div><p class="settings-description">Сохраните копию рейсов, машин, водителей и клиентов в JSON-файле или сбросьте демонстрационные изменения.</p><div class="settings-actions"><button class="button button-outline" data-action="export-backup">Скачать копию</button><button class="button button-outline" data-action="import-backup">Восстановить из файла</button><button class="button button-outline danger-outline" data-action="reset-data">Сбросить изменения</button><input id="backupFile" type="file" accept=".json,application/json" hidden></div></article>
           <article class="panel settings-card"><div class="settings-title"><span class="settings-icon green">✓</span><span><strong>Подключение</strong><small>Статус текущей версии</small></span></div><div class="settings-info"><span>Режим работы</span><strong>Демо · локальное хранение</strong></div><div class="settings-info"><span>GPS-телематика</span><strong>Не подключена</strong></div><div class="settings-info"><span>Синхронизация команды</span><strong>Нужен сервер</strong></div></article></div>`;
     }
 
@@ -424,7 +513,7 @@
                 const filter = button.dataset.tripFilter;
                 byId("workspacePage").querySelectorAll("[data-trip-filter]").forEach((item) => item.classList.toggle("active", item === button));
                 byId("tripsTableBody").querySelectorAll("tr").forEach((row) => {
-                    const matches = filter === "all" || (filter === "active" && !row.querySelector(".table-status.delivered"))
+                    const matches = filter === "all" || (filter === "active" && !row.querySelector(".table-status.delivered, .table-status.stopped"))
                         || (filter === "delayed" && row.querySelector(".table-status.delayed"))
                         || (filter === "delivered" && row.querySelector(".table-status.delivered"));
                     row.hidden = !matches;
@@ -432,6 +521,7 @@
             });
         });
         byId("workspacePage").querySelector("#companyForm")?.addEventListener("submit", saveCompanySettings);
+        byId("workspacePage").querySelector("#backupFile")?.addEventListener("change", importBackup);
     }
 
     function handlePageAction(action, id) {
@@ -449,12 +539,19 @@
         if (action === "export-trips") return exportCSV(trucks.filter((truck) => truck.status !== "stopped"), "reisy-transline.csv");
         if (action === "export-finance") return exportCSV(trucks.filter((truck) => truck.status !== "stopped").map((truck) => ({ id: truck.id, route: `${truck.from} → ${truck.to}`, driver: truck.driver, amount: truck.amount || 68400, status: statusLabels[truck.status] })), "finansy-transline.csv");
         if (action === "export-backup") return exportBackup();
+        if (action === "import-backup") return byId("backupFile").click();
         if (action === "reset-data") return resetDemoData();
     }
 
     function openTripModal() {
         byId("tripError").classList.remove("visible");
         byId("tripForm").reset();
+        const driverSelect = byId("tripDriver");
+        driverSelect.replaceChildren(new Option("Выберите водителя", ""));
+        drivers.forEach((driver) => driverSelect.add(new Option(`${driver.name} · ${driver.status}`, driver.name)));
+        const clientSelect = byId("tripClient");
+        clientSelect.replaceChildren(new Option("Не выбран", ""));
+        clients.forEach((client) => clientSelect.add(new Option(client.name, client.name)));
         openModal("tripModal");
     }
 
@@ -473,7 +570,8 @@
                 ["location", "Текущая позиция", "Например, трасса М-7", true],
                 ["eta", "Прибытие", "Сегодня, 18:30", true],
                 ["amount", "Стоимость рейса, ₽", "68000", false],
-                ["progress", "Прогресс, %", "0", false]
+                ["progress", "Прогресс, %", "0", false],
+                ["status", "Статус машины", "Выберите статус", true]
             ],
             driver: [
                 ["name", "Имя и фамилия", "Например, Анна Смирнова", true],
@@ -495,7 +593,13 @@
         byId("recordTitle").textContent = `${isEdit ? "Изменить" : "Добавить"} ${title}`;
         byId("recordDescription").textContent = "Информация сохранится в этом браузере.";
         byId("recordForm").innerHTML = `<div class="record-form-grid">${fields.map(([key, label, placeholder, required]) => {
-            const value = record?.[key] ?? (key === "status" ? "На базе" : key === "orders" || key === "progress" || key === "amount" ? "" : "");
+            const value = record?.[key] ?? (key === "status" ? (type === "truck" ? "moving" : "На базе") : key === "orders" || key === "progress" || key === "amount" ? "" : "");
+            if (key === "status" && type === "truck") {
+                return `<label class="form-field"><span>${label}</span><select name="status" required>${Object.entries(statusLabels).map(([status, caption]) => `<option value="${status}" ${value === status ? "selected" : ""}>${caption}</option>`).join("")}</select></label>`;
+            }
+            if (key === "status" && type === "driver") {
+                return `<label class="form-field"><span>${label}</span><select name="status" required>${["На базе", "На маршруте", "Отдых", "Выходной"].map((status) => `<option ${value === status ? "selected" : ""}>${status}</option>`).join("")}</select></label>`;
+            }
             const numeric = ["orders", "progress", "amount"].includes(key);
             return `<label class="form-field ${fields.length > 4 ? "" : "single-field"}"><span>${label}</span><input name="${key}" ${numeric ? `type="number" min="0" ${key === "progress" ? 'max="100"' : ""}` : "type=\"text\""} value="${escapeHTML(value)}" placeholder="${escapeHTML(placeholder)}" ${required ? "required" : ""} maxlength="80"></label>`;
         }).join("")}</div><p class="form-error" id="recordError" role="alert"></p><button class="button button-primary modal-submit" type="submit">${isEdit ? "Сохранить изменения" : `Добавить ${title}`} <span>→</span></button>`;
@@ -525,7 +629,7 @@
                 to: values.to.trim(),
                 location: values.location.trim(),
                 eta: values.eta.trim(),
-                status: existing?.status || "stopped",
+                status: values.status || existing?.status || "stopped",
                 amount: Number(values.amount) || 0,
                 progress: Math.max(0, Math.min(100, Number(values.progress) || 0)),
                 x: existing?.x ?? 20 + Math.random() * 60,
@@ -533,6 +637,7 @@
             };
             if (existing) trucks = trucks.map((item) => item.id === truck.id ? truck : item);
             else trucks.unshift(truck);
+            addActivity(existing ? "Данные машины изменены" : "Машина добавлена", `${truck.id} · ${truck.plate}`, "created");
             saveTrucks();
             updateMetrics();
             renderFleet();
@@ -541,10 +646,12 @@
             const record = { id: editingRecordId || `DR-${Date.now().toString().slice(-6)}`, name: values.name.trim(), phone: values.phone.trim(), license: values.license.trim(), status: values.status.trim() || "На базе" };
             drivers = editingRecordId ? drivers.map((item) => item.id === editingRecordId ? record : item) : [record, ...drivers];
             saveCollection(storageKeys.drivers, drivers, starterDrivers);
+            addActivity(editingRecordId ? "Данные водителя изменены" : "Водитель добавлен", record.name, "created");
         } else {
             const record = { id: editingRecordId || `CL-${Date.now().toString().slice(-6)}`, name: values.name.trim(), contact: values.contact.trim(), email: values.email.trim(), phone: values.phone.trim(), city: values.city.trim(), orders: Math.max(0, Number(values.orders) || 0) };
             clients = editingRecordId ? clients.map((item) => item.id === editingRecordId ? record : item) : [record, ...clients];
             saveCollection(storageKeys.clients, clients, starterClients);
+            addActivity(editingRecordId ? "Карточка клиента изменена" : "Клиент добавлен", record.name, "created");
         }
         closeModal(byId("recordModal"));
         renderWorkspacePage(currentPage);
@@ -563,20 +670,26 @@
             updateMetrics();
             renderFleet();
             renderRoutes();
+            addActivity("Машина удалена", `${record.id} · ${record.plate}`, "warning");
         } else if (type === "driver") {
             drivers = drivers.filter((item) => item.id !== id);
             saveCollection(storageKeys.drivers, drivers, starterDrivers);
+            addActivity("Водитель удалён", record.name, "warning");
         } else {
             clients = clients.filter((item) => item.id !== id);
             saveCollection(storageKeys.clients, clients, starterClients);
+            addActivity("Клиент удалён", record.name, "warning");
         }
         renderWorkspacePage(currentPage);
         showToast("Запись удалена.");
     }
 
     function completeTrip(id) {
+        const trip = trucks.find((truck) => truck.id === id);
+        if (!trip || trip.status === "delivered") return;
         trucks = trucks.map((truck) => truck.id === id ? { ...truck, status: "delivered", progress: 100, location: `Доставлено: ${truck.to}` } : truck);
         saveTrucks();
+        addActivity("Доставка завершена", `${trip.id} прибыл в ${trip.to} · ${trip.driver}`, "delivered");
         updateMetrics();
         renderFleet();
         renderRoutes();
@@ -596,8 +709,58 @@
     }
 
     function exportBackup() {
-        const backup = { app: "transline-demo", version: 1, exportedAt: new Date().toISOString(), trucks, drivers, clients };
+        const backup = { app: "transline-demo", version: 1, exportedAt: new Date().toISOString(), trucks, drivers, clients, activities };
         downloadFile(JSON.stringify(backup, null, 2), "transline-backup.json", "application/json");
+    }
+
+    async function importBackup(event) {
+        const file = event.currentTarget.files?.[0];
+        event.currentTarget.value = "";
+        if (!file) return;
+        if (file.size > 2_000_000) {
+            showToast("Файл слишком большой. Максимальный размер — 2 МБ.", true);
+            return;
+        }
+        try {
+            const backup = JSON.parse(await file.text());
+            const isValid = backup?.app === "transline-demo" && backup.version === 1
+                && Array.isArray(backup.trucks) && backup.trucks.every(isValidTruck)
+                && Array.isArray(backup.drivers) && backup.drivers.every((item) => item && ["id", "name", "phone", "license", "status"].every((key) => typeof item[key] === "string"))
+                && Array.isArray(backup.clients) && backup.clients.every((item) => item && ["id", "name", "contact", "email", "phone", "city"].every((key) => typeof item[key] === "string") && Number.isFinite(item.orders))
+                && (!backup.activities || (Array.isArray(backup.activities) && backup.activities.every((item) => item && ["id", "title", "description", "kind"].every((key) => typeof item[key] === "string") && Number.isFinite(item.createdAt))));
+            if (!isValid) throw new Error("Это не резервная копия ТрансЛайн или файл содержит неверные данные.");
+            const nextActivities = backup.activities || [];
+            const entries = [
+                [storageKeys.trucks, backup.trucks],
+                [storageKeys.drivers, backup.drivers],
+                [storageKeys.clients, backup.clients],
+                [storageKeys.activity, nextActivities]
+            ];
+            const previous = entries.map(([key]) => [key, localStorage.getItem(key)]);
+            try {
+                entries.forEach(([key, value]) => localStorage.setItem(key, JSON.stringify(value)));
+            } catch (error) {
+                previous.forEach(([key, value]) => {
+                    if (value === null) localStorage.removeItem(key);
+                    else localStorage.setItem(key, value);
+                });
+                throw error;
+            }
+            trucks = backup.trucks;
+            drivers = backup.drivers;
+            clients = backup.clients;
+            activities = nextActivities;
+            selectedTruckId = trucks[0]?.id ?? null;
+            updateMetrics();
+            renderFleet();
+            renderRoutes();
+            renderActivityList();
+            renderWorkspacePage(currentPage);
+            showToast("Резервная копия восстановлена.");
+        } catch (error) {
+            console.error("Не удалось восстановить резервную копию.", error);
+            showToast(error.message || "Не удалось восстановить данные из этого файла.", true);
+        }
     }
 
     function downloadFile(contents, filename, type) {
@@ -617,11 +780,23 @@
         trucks = starterTrucks.map((item) => ({ ...item }));
         drivers = starterDrivers.map((item) => ({ ...item }));
         clients = starterClients.map((item) => ({ ...item }));
+        activities = [
+            { id: "EV-1", title: "Доставка завершена", description: "RF-204 доставил груз в Казань · Сергей Козлов", kind: "delivered", createdAt: Date.now() - 12 * 60_000 },
+            { id: "EV-2", title: "Новый рейс", description: "RF-118 выехал из Москвы · Андрей Морозов", kind: "departed", createdAt: Date.now() - 34 * 60_000 },
+            { id: "EV-3", title: "Задержка в пути", description: "RF-073 задерживается на трассе М-7 · Иван Петров", kind: "warning", createdAt: Date.now() - 48 * 60_000 }
+        ];
         selectedTruckId = trucks[0].id;
-        [storageKeys.trucks, storageKeys.drivers, storageKeys.clients].forEach((key) => localStorage.removeItem(key));
+        try {
+            [storageKeys.trucks, storageKeys.drivers, storageKeys.clients, storageKeys.activity].forEach((key) => localStorage.removeItem(key));
+        } catch (error) {
+            console.error("Не удалось очистить сохранённые демо-данные.", error);
+            showToast("Не удалось очистить браузерное хранилище.", true);
+            return;
+        }
         updateMetrics();
         renderFleet();
         renderRoutes();
+        renderActivityList();
         renderWorkspacePage(currentPage);
         showToast("Демо-данные восстановлены.");
     }
@@ -644,6 +819,7 @@
                 byId("companyName").textContent = company;
             }
             showToast("Название компании обновлено.");
+            addActivity("Настройки компании изменены", company, "created");
         } catch (error) {
             console.error("Не удалось сохранить название компании.", error);
             showToast("Не удалось сохранить настройки компании.", true);
@@ -889,16 +1065,24 @@
         }
     });
 
-    byId("newTripButton").addEventListener("click", () => openModal("tripModal"));
+    byId("newTripButton").addEventListener("click", openTripModal);
     byId("tripForm").addEventListener("submit", (event) => {
         event.preventDefault();
         const plate = byId("tripPlate").value.trim();
-        const driver = byId("tripDriver").value.trim();
+        const driver = byId("tripDriver").value;
         const from = byId("tripFrom").value.trim();
         const to = byId("tripTo").value.trim();
+        const client = byId("tripClient").value;
+        const amount = Number(byId("tripAmount").value) || 0;
+        const etaInput = byId("tripEta").value;
         const errorMessage = byId("tripError");
         if (![plate, driver, from, to].every(Boolean)) {
-            errorMessage.textContent = "Заполните все поля, чтобы создать рейс.";
+            errorMessage.textContent = "Выберите водителя и заполните номер машины и маршрут.";
+            errorMessage.classList.add("visible");
+            return;
+        }
+        if (drivers.some((item) => item.name === driver && trucks.some((truck) => truck.driver === driver && ["moving", "delayed"].includes(truck.status)))) {
+            errorMessage.textContent = "У этого водителя уже есть активный рейс. Выберите свободного водителя.";
             errorMessage.classList.add("visible");
             return;
         }
@@ -914,8 +1098,10 @@
             id: `RF-${String(sequence).padStart(3, "0")}`,
             plate, driver, from, to,
             location: `Выезд из г. ${from}`,
+            client,
+            amount,
             status: "moving",
-            eta: "Расчёт ETA",
+            eta: etaInput ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(etaInput)) : "Расчёт ETA",
             progress: 4,
             x: 17 + ((position * 13 + 19) % 70),
             y: 25 + ((position * 17 + 23) % 55)
@@ -931,6 +1117,8 @@
         updateMetrics();
         renderFleet();
         renderRoutes();
+        addActivity("Создан новый рейс", `${newTruck.id} · ${from} → ${to} · ${driver}`, "created");
+        if (currentPage === "trips") renderWorkspacePage("trips");
         closeModal(byId("tripModal"));
         showToast(`Рейс ${newTruck.id} добавлен в демо-автопарк.`);
     });
@@ -984,26 +1172,33 @@
             showToast("Сначала выберите машину в автопарке.", true);
             return;
         }
-        showToast(`${truck.id} · ${truck.from} → ${truck.to} · ${truck.driver} · ${truck.status === "stopped" ? "Стоянка" : `Прибытие: ${truck.eta}`}`);
+        showTruckDetails(truck);
     });
 
     document.querySelectorAll(".nav-link").forEach((button) => {
         button.addEventListener("click", () => {
             document.querySelectorAll(".nav-link").forEach((item) => item.classList.toggle("active", item === button));
             byId("currentSection").textContent = button.dataset.section;
-            const targetId = button.dataset.scroll;
-            if (targetId === "fleet") byId("fleetSection").scrollIntoView({ behavior: "smooth", block: "center" });
-            else if (targetId === "routes") byId("routesSection").scrollIntoView({ behavior: "smooth", block: "center" });
-            else if (button.dataset.section !== "Обзор") showToast(`Раздел «${button.dataset.section}» доступен в демонстрационной панели.`);
+            renderWorkspacePage(button.dataset.page || "overview");
+            window.scrollTo({ top: 0, behavior: "smooth" });
             byId("sidebar").classList.remove("mobile-open");
         });
     });
     byId("allRoutesButton").addEventListener("click", () => {
         document.querySelector('[data-section="Рейсы"]').click();
     });
-    byId("activityButton").addEventListener("click", () => showToast("Это последние события демо-автопарка."));
-    byId("notificationsButton").addEventListener("click", () => showToast("Новых уведомлений нет."));
+    byId("activityButton").addEventListener("click", () => {
+        renderActivityList();
+        openModal("activityModal");
+    });
+    byId("notificationsButton").addEventListener("click", () => {
+        renderActivityList();
+        openModal("activityModal");
+    });
     byId("supportButton").addEventListener("click", () => showToast("Демо-поддержка: support@transline.example"));
+    byId("companyName").closest(".company-switch").addEventListener("click", () => {
+        document.querySelector('[data-page="settings"]').click();
+    });
     byId("mobileMenuButton").addEventListener("click", () => byId("sidebar").classList.toggle("mobile-open"));
     document.addEventListener("click", (event) => {
         if (window.innerWidth <= 620 && byId("sidebar").classList.contains("mobile-open")
@@ -1023,4 +1218,5 @@
     updateMetrics();
     renderFleet();
     renderRoutes();
+    renderActivityList();
 })();
