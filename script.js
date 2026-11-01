@@ -10,7 +10,9 @@
         company: "transline-demo-company",
         activity: "transline-demo-activity",
         theme: "transline-demo-theme",
-        routeSubscriptions: "transline-demo-route-subscriptions"
+        routeSubscriptions: "transline-demo-route-subscriptions",
+        marketOffers: "transline-demo-market-offers",
+        driverRatings: "transline-demo-driver-ratings"
     };
     const starterTrucks = [
         { id: "RF-204", plate: "А781МР 799", driver: "Сергей Козлов", from: "Москва", to: "Казань", location: "Трасса М-7, 42 км", status: "moving", eta: "14:30", progress: 68, x: 54, y: 48 },
@@ -71,6 +73,13 @@
     ], (item) => item && ["id", "title", "description", "kind"].every((key) => typeof item[key] === "string") && Number.isFinite(item.createdAt));
     let routeSubscriptions = loadCollection(storageKeys.routeSubscriptions, [],
         (item) => item && ["id", "query"].every((key) => typeof item[key] === "string") && Number.isFinite(item.createdAt));
+    let marketOffers = loadCollection(storageKeys.marketOffers, [],
+        (item) => item && ["id", "kind", "from", "to", "description", "contact"].every((key) => typeof item[key] === "string")
+            && ["cargo", "vehicle"].includes(item.kind) && Number.isFinite(item.createdAt)
+            && (item.price === null || Number.isFinite(item.price)));
+    let driverRatings = loadCollection(storageKeys.driverRatings, [],
+        (item) => item && typeof item.driverId === "string" && Number.isInteger(item.value)
+            && item.value >= 1 && item.value <= 5 && Number.isFinite(item.updatedAt));
     let activeFilter = "all";
     let selectedTruckId = trucks[0]?.id ?? null;
     let searchQuery = "";
@@ -222,6 +231,17 @@
         }
     }
 
+    function saveLocalCollection(key, records, label) {
+        try {
+            localStorage.setItem(key, JSON.stringify(records));
+            return true;
+        } catch (error) {
+            console.error(`Не удалось сохранить ${label}.`, error);
+            showToast(`Не удалось сохранить ${label} в браузере.`, true);
+            return false;
+        }
+    }
+
     function normalizeSearchText(value) {
         return value.toLocaleLowerCase("ru").replace(/[^\p{L}\p{N}]+/gu, " ").trim().replace(/\s+/g, " ");
     }
@@ -249,6 +269,11 @@
             return;
         }
         const matchingTrucks = findMatchingTrucks(query);
+        const terms = normalizeSearchText(query).split(" ").filter(Boolean);
+        const matchingOffers = marketOffers.filter((offer) => isRecentListing(offer)
+            && terms.every((term) => normalizeSearchText([
+                offer.from, offer.to, offer.description, offer.vehicleType, offer.kind
+            ].join(" ")).includes(term)));
         const matchingClients = clients.filter((client) =>
             normalizeSearchText([client.name, client.city, client.contact].join(" ")).includes(normalizedQuery));
         const cards = matchingTrucks.map((truck) => {
@@ -261,6 +286,9 @@
                 : "Дата обновления контактов не указана";
             return `<article class="search-result-card"><div><span class="search-route">${escapeHTML(truck.from)} <b>→</b> ${escapeHTML(truck.to)}</span><small>${escapeHTML(truck.cargo || "Груз не указан")} · ${escapeHTML(truck.id)}</small></div><div class="search-result-meta"><span class="table-status ${escapeHTML(truck.status)}">${escapeHTML(statusLabels[truck.status])}</span>${client ? `${companyStatus}<small>${escapeHTML(lastUpdated)}</small>` : '<span class="verification-badge">Компания не указана</span>'}</div><button type="button" class="table-action" data-search-trip="${escapeHTML(truck.id)}">Открыть рейсы →</button></article>`;
         }).join("");
+        const offerCards = matchingOffers.map((offer) =>
+            `<article class="search-result-card"><div><span class="search-route">${escapeHTML(offer.from)} → ${escapeHTML(offer.to)}</span><small>${offer.kind === "cargo" ? "Нужна машина" : "Свободный транспорт"} · ${escapeHTML(offer.description)}</small></div><div class="search-result-meta"><span>${escapeHTML(offer.vehicleType)}</span><strong>${offer.price ? currency(offer.price) : "Ставка по запросу"}</strong><small>Контакт: ${escapeHTML(offer.contact)}</small></div><button type="button" class="table-action" data-search-market-offer="${escapeHTML(offer.id)}">Открыть биржу →</button></article>`
+        ).join("");
         const companyCards = matchingClients.map((client) => {
             const status = client.verified === true
                 ? '<span class="verification-badge verified">✓ Проверена</span>'
@@ -271,10 +299,13 @@
             return `<article class="search-result-card"><div><span class="search-route">${escapeHTML(client.name)}</span><small>${escapeHTML(client.city)} · ${escapeHTML(client.contact)}</small></div><div class="search-result-meta">${status}<small>Контакты обновлены: ${updated}</small></div></article>`;
         }).join("");
         const emptyMessage = `<p class="search-empty">Свежих совпадений не найдено. Проверьте запрос или добавьте рейс. Записи старше года не показываются в поиске.</p>`;
-        results.innerHTML = `<div class="search-results-heading"><strong>Результаты поиска</strong><span>${matchingTrucks.length} рейсов · ${matchingClients.length} компаний</span></div>${cards}${companyCards}${cards || companyCards ? "" : emptyMessage}<p class="search-data-note">Демо-данные. Статус проверки компании подтверждается только после внешней проверки документов; здесь она не подключена.</p>`;
+        results.innerHTML = `<div class="search-results-heading"><strong>Результаты поиска</strong><span>${matchingTrucks.length} рейсов · ${matchingOffers.length} предложений · ${matchingClients.length} компаний</span></div>${cards}${offerCards}${companyCards}${cards || offerCards || companyCards ? "" : emptyMessage}<p class="search-data-note">Демо-данные. Статус проверки компании подтверждается только после внешней проверки документов; здесь она не подключена.</p>`;
         results.hidden = false;
         results.querySelectorAll("[data-search-trip]").forEach((button) => {
             button.addEventListener("click", () => document.querySelector('.nav-link[data-page="trips"]').click());
+        });
+        results.querySelectorAll("[data-search-market-offer]").forEach((button) => {
+            button.addEventListener("click", () => document.querySelector('.nav-link[data-page="market"]').click());
         });
     }
 
@@ -560,6 +591,49 @@
         byId("navFleetCount").textContent = trucks.length;
         byId("movingTrack").style.width = `${trucks.length ? Math.round(moving / trucks.length * 100) : 0}%`;
         byId("delayedTrack").style.width = `${trucks.length ? Math.round(delayed / trucks.length * 100) : 0}%`;
+        renderOperationalAlerts();
+    }
+
+    function renderOperationalAlerts() {
+        const container = byId("operationalAlertList");
+        const alerts = trucks
+            .filter((truck) => ["delayed", "stopped"].includes(truck.status))
+            .sort((first, second) => (first.status === "delayed" ? 0 : 1) - (second.status === "delayed" ? 0 : 1));
+        byId("operationalAlertCount").textContent = alerts.length;
+        container.replaceChildren();
+        if (alerts.length === 0) {
+            const empty = document.createElement("p");
+            empty.className = "operational-alert-empty";
+            empty.textContent = "Все машины на маршруте. Сейчас нет активных предупреждений.";
+            container.append(empty);
+            return;
+        }
+        alerts.forEach((truck) => {
+            const item = document.createElement("article");
+            item.className = `operational-alert-item ${truck.status}`;
+            const icon = document.createElement("span");
+            icon.className = "operational-alert-icon";
+            icon.setAttribute("aria-hidden", "true");
+            icon.textContent = truck.status === "delayed" ? "!" : "Ⅱ";
+            const details = document.createElement("div");
+            details.className = "operational-alert-copy";
+            const title = document.createElement("strong");
+            title.textContent = `${truck.id} · ${truck.status === "delayed" ? "Задержка в пути" : "Стоянка"}`;
+            const route = document.createElement("span");
+            route.textContent = `${truck.from} → ${truck.to} · ${truck.driver}`;
+            const hint = document.createElement("small");
+            hint.textContent = truck.status === "delayed"
+                ? `Прибытие: ${truck.eta}. Проверьте статус у водителя.`
+                : `${truck.location}. Уточните, плановая ли это остановка.`;
+            details.append(title, route, hint);
+            const action = document.createElement("button");
+            action.type = "button";
+            action.className = "operational-alert-action";
+            action.dataset.alertTruck = truck.id;
+            action.textContent = "Проверить машину";
+            item.append(icon, details, action);
+            container.append(item);
+        });
     }
 
     function escapeHTML(value) {
@@ -884,7 +958,11 @@
         const cards = drivers.map((driver) => {
             const assigned = trucks.find((truck) => truck.driver === driver.name && ["moving", "delayed"].includes(truck.status));
             const initials = driver.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toLocaleUpperCase("ru");
-            return `<article class="person-card"><div class="person-card-top"><span class="person-avatar">${escapeHTML(initials)}</span><span class="person-status ${assigned ? "on-route" : ""}">${assigned ? "На маршруте" : escapeHTML(driver.status)}</span></div><h3>${escapeHTML(driver.name)}</h3><p>${escapeHTML(driver.license)}</p><div class="person-detail"><span>Телефон</span><strong>${escapeHTML(driver.phone)}</strong></div><div class="person-detail"><span>Текущий рейс</span><strong>${assigned ? escapeHTML(assigned.id) + " · " + escapeHTML(assigned.to) : "Свободен"}</strong></div><div class="person-actions"><button data-action="edit-driver" data-id="${escapeHTML(driver.id)}">Изменить</button><button data-action="delete-driver" data-id="${escapeHTML(driver.id)}">Удалить</button></div></article>`;
+            const rating = driverRatings.find((item) => item.driverId === driver.id);
+            const ratingControls = [1, 2, 3, 4, 5].map((value) =>
+                `<button type="button" class="rating-star ${rating && value <= rating.value ? "selected" : ""}" data-action="rate-driver" data-id="${escapeHTML(driver.id)}" data-rating="${value}" aria-label="Оценить ${escapeHTML(driver.name)} на ${value} из 5" aria-pressed="${Boolean(rating && value === rating.value)}">★</button>`
+            ).join("");
+            return `<article class="person-card"><div class="person-card-top"><span class="person-avatar">${escapeHTML(initials)}</span><span class="person-status ${assigned ? "on-route" : ""}">${assigned ? "На маршруте" : escapeHTML(driver.status)}</span></div><h3>${escapeHTML(driver.name)}</h3><p>${escapeHTML(driver.license)}</p><div class="person-detail"><span>Телефон</span><strong>${escapeHTML(driver.phone)}</strong></div><div class="person-detail"><span>Текущий рейс</span><strong>${assigned ? escapeHTML(assigned.id) + " · " + escapeHTML(assigned.to) : "Свободен"}</strong></div><div class="driver-rating"><span>${rating ? `Ваша оценка: ${rating.value}/5` : "Оцените водителя"}</span><div role="group" aria-label="Демо-оценка водителя">${ratingControls}</div><small>Личная оценка в этом браузере, не публичный рейтинг</small></div><div class="person-actions"><button data-action="edit-driver" data-id="${escapeHTML(driver.id)}">Изменить</button><button data-action="delete-driver" data-id="${escapeHTML(driver.id)}">Удалить</button></div></article>`;
         }).join("");
         return `${makePageHeader("Водители", "Контакты сотрудников и распределение по рейсам.", "Добавить водителя", "add-driver")}
           <div class="page-stat-row"><article><span>В команде</span><strong>${drivers.length}</strong></article><article><span>На маршруте</span><strong>${drivers.filter((driver) => trucks.some((truck) => truck.driver === driver.name && truck.status === "moving")).length}</strong></article><article><span>Свободны</span><strong>${drivers.filter((driver) => !trucks.some((truck) => truck.driver === driver.name && truck.status === "moving")).length}</strong></article></div>
@@ -912,6 +990,8 @@
             `<article class="subscription-card"><div><strong>${escapeHTML(subscription.query)}</strong><small>Создана ${new Intl.DateTimeFormat("ru-RU").format(subscription.createdAt)}</small></div><button class="table-action danger" data-action="delete-route-subscription" data-id="${escapeHTML(subscription.id)}">Удалить</button></article>`
         ).join("");
         const recentCount = trucks.filter((truck) => ["moving", "delayed", "stopped"].includes(truck.status) && isRecentListing(truck)).length;
+        const freshOffers = marketOffers.filter(isRecentListing);
+        const offers = freshOffers.map((offer) => `<article class="market-offer-card" data-kind="${escapeHTML(offer.kind)}"><div class="market-offer-top"><span class="market-offer-kind ${escapeHTML(offer.kind)}">${offer.kind === "cargo" ? "Нужна машина" : "Свободный транспорт"}</span><small>${new Intl.DateTimeFormat("ru-RU").format(offer.createdAt)}</small></div><h3>${escapeHTML(offer.from)} → ${escapeHTML(offer.to)}</h3><p>${escapeHTML(offer.description)}</p><div class="market-offer-meta"><span>${escapeHTML(offer.vehicleType)}</span><strong>${offer.price ? currency(offer.price) : "Ставка по запросу"}</strong></div><div class="market-offer-contact"><span>${escapeHTML(offer.contact)}</span><button class="table-action danger" data-action="delete-market-offer" data-id="${escapeHTML(offer.id)}">Снять</button></div></article>`).join("");
         const borderItems = [
             ["Казахстан", "Очереди и режимы пропуска: оперативный источник не подключён."],
             ["Узбекистан", "Пошлины и правила транзита: требуется проверка по официальным актуальным источникам."],
@@ -919,11 +999,26 @@
         ].map(([country, detail]) => `<article class="border-info-card"><span class="border-country">${country}</span><p>${detail}</p><span class="border-feed-status"><i></i> Нет live-данных</span></article>`).join("");
         return `${makePageHeader("Ставки и маршруты", "Ищите свежие демо-предложения, сохраняйте направления и проверяйте актуальность данных.")}
           <div class="page-stat-row"><article><span>Свежих демо-рейсов</span><strong>${recentCount}</strong></article><article><span>Подписок на маршруты</span><strong>${routeSubscriptions.length}</strong></article><article><span>Проверенных компаний</span><strong>${clients.filter((client) => client.verified === true).length}</strong></article></div>
+          <section class="panel market-section market-publish"><div class="data-panel-head"><div><h2>Биржа грузов и транспорта</h2><p>Публикации видны только в этом браузере — серверной биржи пока нет</p></div></div>
+            <form class="market-publish-form" id="marketOfferForm">
+              <label class="form-field"><span>Что предлагаете?</span><select name="kind"><option value="cargo">Ищу машину для груза</option><option value="vehicle">Предлагаю свободную машину</option></select></label>
+              <label class="form-field"><span>Откуда</span><input name="from" maxlength="60" required placeholder="Город отправления"></label>
+              <label class="form-field"><span>Куда</span><input name="to" maxlength="60" required placeholder="Город доставки"></label>
+              <label class="form-field"><span>Груз или параметры машины</span><input name="description" maxlength="100" required placeholder="Например, текстиль · 5 тонн"></label>
+              <label class="form-field"><span>Тип кузова</span><select name="vehicleType"><option>Тент</option><option>Шторный</option><option>Рефрижератор</option><option>Контейнеровоз</option><option>Бортовой</option></select></label>
+              <label class="form-field"><span>Ставка, ₽ (необязательно)</span><input name="price" type="number" min="0" max="100000000" step="1000" placeholder="По запросу"></label>
+              <label class="form-field market-contact-field"><span>Контакт для связи</span><input name="contact" maxlength="100" required placeholder="Телефон или рабочая почта"></label>
+              <button class="button button-primary" type="submit">Опубликовать предложение</button>
+            </form>
+            <div class="market-list-heading"><div><h2>Свежие предложения</h2><p>Записи старше года скрываются автоматически</p></div><div class="market-kind-filters" role="group" aria-label="Фильтр предложений"><button class="active" type="button" data-market-kind="all">Все</button><button type="button" data-market-kind="cargo">Нужна машина</button><button type="button" data-market-kind="vehicle">Свободный транспорт</button></div></div>
+            <div class="market-offers-list" id="marketOffersList">${offers || '<p class="table-empty">Пока нет предложений. Добавьте первое — оно сохранится в этом браузере.</p>'}</div>
+            <p class="market-note">Не публикуйте личные данные в общей сети: предложения сейчас локальные, но после подключения сервера потребуется продумать доступ и модерацию.</p>
+          </section>
           <div class="market-grid">
             <section class="panel market-section"><div class="data-panel-head"><div><h2>Подписки на направления</h2><p>Сохранённые запросы остаются в этом браузере</p></div></div><div class="subscription-list">${subscriptions || '<p class="table-empty">Подписок пока нет. Сохраните запрос с главной страницы.</p>'}</div><p class="market-note">Оповещения пока показываются только внутри этого браузера при добавлении подходящего демо-рейса. Для Telegram нужен серверный бот и API.</p></section>
             <section class="panel market-section"><div class="data-panel-head"><div><h2>Границы и транзит</h2><p>Очереди и пошлины не загружаются автоматически</p></div></div><div class="border-info-list">${borderItems}</div><p class="market-note">Не используйте эти карточки как таможенную консультацию: подключите подтверждённые официальные источники и регулярно обновляемый API.</p></section>
           </div>
-          <section class="panel market-section market-freshness"><div class="data-panel-head"><div><h2>Актуальность предложений</h2><p>Старые активные записи скрываются из поиска автоматически</p></div></div><p>Рейсы старше 365 дней не отображаются в поиске на главной. История и исходные записи не удаляются из браузера.</p></section>`;
+          <section class="panel market-section market-freshness"><div class="data-panel-head"><div><h2>Актуальность предложений</h2><p>Старые активные записи скрываются из поиска автоматически</p></div></div><p>Рейсы и публикации биржи старше 365 дней не отображаются в поиске и ленте. История и исходные записи не удаляются из браузера.</p></section>`;
     }
 
     function renderAnalyticsPage() {
@@ -1059,7 +1154,7 @@
         }
         byId("workspacePage").innerHTML = renderer();
         byId("workspacePage").querySelectorAll("[data-action]").forEach((button) => {
-            button.addEventListener("click", () => handlePageAction(button.dataset.action, button.dataset.id));
+            button.addEventListener("click", () => handlePageAction(button.dataset.action, button.dataset.id, button.dataset.rating));
         });
         const search = byId("pageSearch");
         if (search) search.addEventListener("input", () => {
@@ -1068,8 +1163,61 @@
                 return;
             }
             const query = search.value.toLocaleLowerCase("ru");
+            if (currentPage === "market") {
+                byId("marketOffersList").querySelectorAll(".market-offer-card").forEach((card) => {
+                    card.hidden = !card.textContent.toLocaleLowerCase("ru").includes(query);
+                });
+                return;
+            }
             byId("workspacePage").querySelectorAll(".data-table tbody tr, .person-card").forEach((row) => {
                 row.hidden = !row.textContent.toLocaleLowerCase("ru").includes(query);
+            });
+        });
+        byId("workspacePage").querySelector("#marketOfferForm")?.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const values = Object.fromEntries(new FormData(event.currentTarget).entries());
+            const from = String(values.from).trim();
+            const to = String(values.to).trim();
+            const description = String(values.description).trim();
+            const contact = String(values.contact).trim();
+            const price = values.price === "" ? null : Number(values.price);
+            if (normalizeSearchText(from) === normalizeSearchText(to)) {
+                showToast("Города отправления и доставки должны отличаться.", true);
+                return;
+            }
+            if (price !== null && (!Number.isFinite(price) || price < 0 || price > 100_000_000)) {
+                showToast("Укажите допустимую ставку или оставьте поле пустым.", true);
+                return;
+            }
+            const offer = {
+                id: `OFR-${Date.now()}`,
+                kind: values.kind === "vehicle" ? "vehicle" : "cargo",
+                from,
+                to,
+                description,
+                vehicleType: String(values.vehicleType),
+                price,
+                contact,
+                createdAt: Date.now()
+            };
+            const nextOffers = [offer, ...marketOffers];
+            if (!saveLocalCollection(storageKeys.marketOffers, nextOffers, "предложение биржи")) return;
+            marketOffers = nextOffers;
+            const matched = routeSubscriptions.some((subscription) =>
+                normalizeSearchText(subscription.query).split(" ").filter(Boolean).every((term) =>
+                    normalizeSearchText([offer.from, offer.to, offer.description].join(" ")).includes(term)));
+            renderWorkspacePage("market");
+            showToast(matched
+                ? "Предложение опубликовано. Есть совпадение с подпиской; Telegram не подключён."
+                : "Предложение сохранено в локальной демо-бирже.");
+        });
+        byId("workspacePage").querySelectorAll("[data-market-kind]").forEach((button) => {
+            button.addEventListener("click", () => {
+                byId("workspacePage").querySelectorAll("[data-market-kind]").forEach((item) =>
+                    item.classList.toggle("active", item === button));
+                byId("marketOffersList").querySelectorAll(".market-offer-card").forEach((card) => {
+                    card.hidden = button.dataset.marketKind !== "all" && card.dataset.kind !== button.dataset.marketKind;
+                });
             });
         });
         byId("workspacePage").querySelectorAll("[data-trip-filter]").forEach((button) => {
@@ -1106,7 +1254,7 @@
         });
     }
 
-    function handlePageAction(action, id) {
+    function handlePageAction(action, id, value) {
         if (action === "add-trip") return openTripModal();
         if (action === "add-truck") return openRecordModal("truck");
         if (action === "add-driver") return openRecordModal("driver");
@@ -1140,6 +1288,28 @@
             if (saveRouteSubscriptions(nextSubscriptions)) {
                 renderWorkspacePage("market");
                 showToast("Подписка удалена.");
+            }
+        }
+        if (action === "delete-market-offer") {
+            const nextOffers = marketOffers.filter((item) => item.id !== id);
+            if (saveLocalCollection(storageKeys.marketOffers, nextOffers, "предложения биржи")) {
+                marketOffers = nextOffers;
+                renderWorkspacePage("market");
+                showToast("Предложение снято с демо-биржи.");
+            }
+        }
+        if (action === "rate-driver") {
+            const ratingValue = Number(value);
+            if (!drivers.some((driver) => driver.id === id) || !Number.isInteger(ratingValue) || ratingValue < 1 || ratingValue > 5) return;
+            const nextRatings = [...driverRatings.filter((item) => item.driverId !== id), {
+                driverId: id,
+                value: ratingValue,
+                updatedAt: Date.now()
+            }];
+            if (saveLocalCollection(storageKeys.driverRatings, nextRatings, "оценку водителя")) {
+                driverRatings = nextRatings;
+                renderWorkspacePage("drivers");
+                showToast("Оценка сохранена только в этом браузере.");
             }
         }
     }
@@ -1286,7 +1456,9 @@
             addActivity("Машина удалена", `${record.id} · ${record.plate}`, "warning");
         } else if (type === "driver") {
             drivers = drivers.filter((item) => item.id !== id);
+            driverRatings = driverRatings.filter((item) => item.driverId !== id);
             saveCollection(storageKeys.drivers, drivers, starterDrivers);
+            saveLocalCollection(storageKeys.driverRatings, driverRatings, "оценки водителей");
             addActivity("Водитель удалён", record.name, "warning");
         } else {
             clients = clients.filter((item) => item.id !== id);
@@ -1336,7 +1508,7 @@
     }
 
     function exportBackup() {
-        const backup = { app: "transline-demo", version: 1, exportedAt: new Date().toISOString(), trucks, drivers, clients, activities, routeSubscriptions };
+        const backup = { app: "transline-demo", version: 1, exportedAt: new Date().toISOString(), trucks, drivers, clients, activities, routeSubscriptions, marketOffers, driverRatings };
         downloadFile(JSON.stringify(backup, null, 2), "transline-backup.json", "application/json");
     }
 
@@ -1355,7 +1527,13 @@
                 && Array.isArray(backup.drivers) && backup.drivers.every((item) => item && ["id", "name", "phone", "license", "status"].every((key) => typeof item[key] === "string"))
                 && Array.isArray(backup.clients) && backup.clients.every((item) => item && ["id", "name", "contact", "email", "phone", "city"].every((key) => typeof item[key] === "string") && Number.isFinite(item.orders))
                 && (!backup.activities || (Array.isArray(backup.activities) && backup.activities.every((item) => item && ["id", "title", "description", "kind"].every((key) => typeof item[key] === "string") && Number.isFinite(item.createdAt))))
-                && (!backup.routeSubscriptions || (Array.isArray(backup.routeSubscriptions) && backup.routeSubscriptions.every((item) => item && ["id", "query"].every((key) => typeof item[key] === "string") && Number.isFinite(item.createdAt))));
+                && (!backup.routeSubscriptions || (Array.isArray(backup.routeSubscriptions) && backup.routeSubscriptions.every((item) => item && ["id", "query"].every((key) => typeof item[key] === "string") && Number.isFinite(item.createdAt))))
+                && (!backup.marketOffers || (Array.isArray(backup.marketOffers) && backup.marketOffers.every((item) => item
+                    && ["id", "from", "to", "description", "contact", "vehicleType"].every((key) => typeof item[key] === "string")
+                    && ["cargo", "vehicle"].includes(item.kind) && Number.isFinite(item.createdAt)
+                    && (item.price === null || Number.isFinite(item.price)))))
+                && (!backup.driverRatings || (Array.isArray(backup.driverRatings) && backup.driverRatings.every((item) => item
+                    && typeof item.driverId === "string" && Number.isInteger(item.value) && item.value >= 1 && item.value <= 5 && Number.isFinite(item.updatedAt))));
             if (!isValid) throw new Error("Это не резервная копия ТрансЛайн или файл содержит неверные данные.");
             const nextActivities = backup.activities || [];
             const entries = [
@@ -1363,7 +1541,9 @@
                 [storageKeys.drivers, backup.drivers],
                 [storageKeys.clients, backup.clients],
                 [storageKeys.activity, nextActivities],
-                [storageKeys.routeSubscriptions, backup.routeSubscriptions || []]
+                [storageKeys.routeSubscriptions, backup.routeSubscriptions || []],
+                [storageKeys.marketOffers, backup.marketOffers || []],
+                [storageKeys.driverRatings, backup.driverRatings || []]
             ];
             const previous = entries.map(([key]) => [key, localStorage.getItem(key)]);
             try {
@@ -1380,6 +1560,8 @@
             clients = backup.clients;
             activities = nextActivities;
             routeSubscriptions = backup.routeSubscriptions || [];
+            marketOffers = backup.marketOffers || [];
+            driverRatings = backup.driverRatings || [];
             selectedTruckId = trucks[0]?.id ?? null;
             updateMetrics();
             renderFleet();
@@ -1416,9 +1598,12 @@
             { id: "EV-2", title: "Новый рейс", description: "RF-118 выехал из Москвы · Андрей Морозов", kind: "departed", createdAt: Date.now() - 34 * 60_000 },
             { id: "EV-3", title: "Задержка в пути", description: "RF-073 задерживается на трассе М-7 · Иван Петров", kind: "warning", createdAt: Date.now() - 48 * 60_000 }
         ];
+        routeSubscriptions = [];
+        marketOffers = [];
+        driverRatings = [];
         selectedTruckId = trucks[0].id;
         try {
-            [storageKeys.trucks, storageKeys.drivers, storageKeys.clients, storageKeys.activity, storageKeys.routeSubscriptions].forEach((key) => localStorage.removeItem(key));
+            [storageKeys.trucks, storageKeys.drivers, storageKeys.clients, storageKeys.activity, storageKeys.routeSubscriptions, storageKeys.marketOffers, storageKeys.driverRatings].forEach((key) => localStorage.removeItem(key));
         } catch (error) {
             console.error("Не удалось очистить сохранённые демо-данные.", error);
             showToast("Не удалось очистить браузерное хранилище.", true);
@@ -1611,9 +1796,10 @@
     byId("authSwitchButton").addEventListener("click", () => {
         setAuthTab(byId("registerForm").hidden ? "register" : "login");
     });
-    document.querySelectorAll("[data-toggle-password]").forEach((button) => {
+    document.querySelectorAll(".password-toggle").forEach((button) => {
         button.addEventListener("click", () => {
-            const passwordInput = byId(button.dataset.togglePassword);
+            const passwordInput = byId(button.getAttribute("aria-controls"));
+            if (!passwordInput) return;
             const isVisible = passwordInput.type === "text";
             passwordInput.type = isVisible ? "password" : "text";
             button.textContent = isVisible ? "Показать" : "Скрыть";
@@ -1621,6 +1807,17 @@
             button.setAttribute("aria-pressed", String(!isVisible));
         });
     });
+    const registrationPassword = byId("registerPassword");
+    const updatePasswordRequirements = () => {
+        const checks = getPasswordRequirements(registrationPassword.value);
+        Object.entries(checks).forEach(([rule, passed]) => {
+            const item = byId("passwordRequirements").querySelector(`[data-password-rule="${rule}"]`);
+            item.classList.toggle("passed", passed);
+            item.setAttribute("aria-label", `${item.textContent}: ${passed ? "выполнено" : "не выполнено"}`);
+        });
+    };
+    registrationPassword.addEventListener("input", updatePasswordRequirements);
+    updatePasswordRequirements();
     byId("registerForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         const name = byId("registerName").value.trim();
@@ -1628,8 +1825,13 @@
         const email = byId("registerEmail").value.trim().toLocaleLowerCase("ru");
         const password = byId("registerPassword").value;
         const errorMessage = byId("registerError");
-        if (!name || !company || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8) {
-            errorMessage.textContent = "Заполните поля и укажите корректную почту. Пароль — не короче 8 символов.";
+        if (!name || !company || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            errorMessage.textContent = "Заполните имя, компанию и укажите корректную рабочую почту.";
+            errorMessage.classList.add("visible");
+            return;
+        }
+        if (Object.values(getPasswordRequirements(password)).some((passed) => !passed)) {
+            errorMessage.textContent = "Пароль должен содержать не менее 12 символов, заглавную и строчную буквы, цифру и специальный знак.";
             errorMessage.classList.add("visible");
             return;
         }
@@ -1643,9 +1845,9 @@
                 errorMessage.classList.add("visible");
                 return;
             }
-            const salt = Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, "0")).join("");
+            const salt = createPasswordSalt();
             const passwordHash = await hashPassword(password, salt);
-            const account = { name, company, email, salt, passwordHash };
+            const account = { name, company, email, salt, passwordHash, passwordAlgorithm: "PBKDF2-SHA256" };
             accounts.push(account);
             localStorage.setItem(storageKeys.accounts, JSON.stringify(accounts));
             localStorage.setItem(storageKeys.user, JSON.stringify({ name, company, email }));
@@ -1663,7 +1865,33 @@
         }
     });
 
+    function getPasswordRequirements(password) {
+        return {
+            length: password.length >= 12,
+            uppercase: /\p{Lu}/u.test(password) && /\p{Ll}/u.test(password),
+            number: /\p{N}/u.test(password),
+            symbol: /[^\p{L}\p{N}\s]/u.test(password)
+        };
+    }
+
+    function createPasswordSalt() {
+        return Array.from(crypto.getRandomValues(new Uint8Array(16)),
+            (byte) => byte.toString(16).padStart(2, "0")).join("");
+    }
+
     async function hashPassword(password, salt) {
+        const saltBytes = new Uint8Array(salt.match(/.{2}/g).map((part) => Number.parseInt(part, 16)));
+        const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+        const digest = await crypto.subtle.deriveBits({
+            name: "PBKDF2",
+            salt: saltBytes,
+            iterations: 600_000,
+            hash: "SHA-256"
+        }, key, 256);
+        return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function legacyHashPassword(password, salt) {
         const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${salt}:${password}`));
         return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
     }
@@ -1683,10 +1911,26 @@
             const accounts = storedAccounts ? JSON.parse(storedAccounts) : [];
             if (!Array.isArray(accounts)) throw new Error("Не удалось прочитать сохранённые аккаунты. Очистите данные сайта и попробуйте снова.");
             const account = accounts.find((item) => item.email === email);
-            if (!account || !account.salt || !account.passwordHash || await hashPassword(password, account.salt) !== account.passwordHash) {
+            const accountHash = account?.passwordAlgorithm === "PBKDF2-SHA256"
+                ? await hashPassword(password, account.salt)
+                : account?.passwordAlgorithm === undefined && account?.salt
+                    ? await legacyHashPassword(password, account.salt)
+                    : null;
+            if (!account || !account.salt || !account.passwordHash || accountHash !== account.passwordHash) {
                 errorMessage.textContent = "Почта или пароль не подошли. Проверьте данные или создайте новый аккаунт.";
                 errorMessage.classList.add("visible");
                 return;
+            }
+            if (account.passwordAlgorithm === undefined) {
+                try {
+                    account.salt = createPasswordSalt();
+                    account.passwordHash = await hashPassword(password, account.salt);
+                    account.passwordAlgorithm = "PBKDF2-SHA256";
+                    localStorage.setItem(storageKeys.accounts, JSON.stringify(accounts));
+                } catch (error) {
+                    console.error("Не удалось обновить алгоритм защиты демо-пароля.", error);
+                    showToast("Вход выполнен, но обновить защиту сохранённого пароля не удалось.", true);
+                }
             }
             localStorage.setItem(storageKeys.user, JSON.stringify({ name: account.name, company: account.company, email: account.email }));
             setUser(account);
@@ -1836,6 +2080,19 @@
         button.addEventListener("click", () => {
             document.querySelector(`.nav-link[data-page="${button.dataset.page}"]`).click();
         });
+    });
+    byId("operationalAlertList").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-alert-truck]");
+        if (!button) return;
+        const truck = trucks.find((item) => item.id === button.dataset.alertTruck);
+        if (!truck) {
+            showToast("Машина больше не найдена. Обновите список и попробуйте снова.", true);
+            updateMetrics();
+            return;
+        }
+        document.querySelector('.nav-link[data-page="overview"]').click();
+        selectTruck(truck.id);
+        showTruckDetails(truck);
     });
     byId("smartSearchForm").addEventListener("submit", (event) => {
         event.preventDefault();

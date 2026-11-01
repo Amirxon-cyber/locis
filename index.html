@@ -171,14 +171,26 @@
                         <div class="portal-hero-badge"><span></span> Единое рабочее пространство</div>
                     </section>
                     <section class="smart-search-panel" aria-label="Поиск перевозок">
-                        <div class="smart-search-heading"><div><p class="portal-eyebrow">ПОИСК ПО ПЕРЕВОЗКАМ</p><h2>Что нужно найти?</h2></div><span>Маршрут · груз · компания</span></div>
+                        <div class="smart-search-heading">
+                            <div>
+                                <p class="portal-eyebrow">ПОИСК ПО ПЕРЕВОЗКАМ</p>
+                                <h2>Что нужно найти?</h2>
+                            </div><span>Маршрут · груз · компания</span>
+                        </div>
                         <form class="smart-search-form" id="smartSearchForm">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4 4"/></svg>
-                            <input id="smartSearchQuery" type="search" placeholder="Например: Ташкент → Москва, текстиль" aria-label="Маршрут, груз или компания" maxlength="120">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="10.8" cy="10.8" r="6.8" />
+                                <path d="m16 16 4 4" />
+                            </svg>
+                            <input id="smartSearchQuery" type="search"
+                                placeholder="Например: Ташкент → Москва, текстиль"
+                                aria-label="Маршрут, груз или компания" maxlength="120">
                             <button class="button button-primary" type="submit">Найти</button>
-                            <button class="button button-outline" id="subscribeSearchButton" type="button">Подписаться</button>
+                            <button class="button button-outline" id="subscribeSearchButton"
+                                type="button">Подписаться</button>
                         </form>
-                        <p class="smart-search-hint">Поиск выполняется по демо-рейсам и сохранённым контактам в этом браузере.</p>
+                        <p class="smart-search-hint">Поиск выполняется по демо-рейсам и сохранённым контактам в этом
+                            браузере.</p>
                         <div class="smart-search-results" id="smartSearchResults" aria-live="polite" hidden></div>
                     </section>
                     <nav class="portal-shortcuts" aria-label="Разделы логистического портала">
@@ -266,6 +278,17 @@
                             <div class="metric-foot"><span class="metric-track violet-track"><i
                                         style="width:74%"></i></span><span>Из 24 запланированных</span></div>
                         </article>
+                    </section>
+
+                    <section class="panel operational-alerts" id="operationalAlerts" aria-labelledby="operationalAlertsTitle">
+                        <div class="operational-alerts-heading">
+                            <div>
+                                <p class="portal-eyebrow">КОНТРОЛЬ ПЕРЕВОЗОК</p>
+                                <h2 id="operationalAlertsTitle">Требуют внимания</h2>
+                            </div>
+                            <span class="alert-count" id="operationalAlertCount">0</span>
+                        </div>
+                        <div class="operational-alert-list" id="operationalAlertList" aria-live="polite"></div>
                     </section>
 
                     <section class="workspace-grid">
@@ -477,12 +500,18 @@
                             required></label>
                     <label class="form-field"><span>Рабочая почта</span><input id="registerEmail" type="email"
                             placeholder="name@company.ru" autocomplete="email" required></label>
-                    <label class="form-field"><span>Пароль <small>не менее 8 символов</small></span><span
+                    <label class="form-field"><span>Пароль <small>12+ символов, цифра и знак</small></span><span
                             class="password-wrapper"><input id="registerPassword" type="password"
-                                placeholder="Придумайте пароль" autocomplete="new-password" minlength="8"
-                                required><button class="password-toggle" type="button"
+                                placeholder="Придумайте сложный пароль" autocomplete="new-password" minlength="12"
+                                maxlength="128" required><button class="password-toggle" type="button"
                                 data-toggle-password="registerPassword" aria-controls="registerPassword"
                                 aria-pressed="false">Показать</button></span></label>
+                    <ul class="password-requirements" id="passwordRequirements" aria-live="polite">
+                        <li data-password-rule="length">Не менее 12 символов</li>
+                        <li data-password-rule="uppercase">Заглавная и строчная буквы</li>
+                        <li data-password-rule="number">Хотя бы одна цифра</li>
+                        <li data-password-rule="symbol">Хотя бы один специальный символ</li>
+                    </ul>
                     <p class="form-error" id="registerError" role="alert"></p>
                     <button class="button button-primary modal-submit" type="submit">Создать аккаунт
                         <span>→</span></button>
@@ -500,7 +529,7 @@
                         <span>→</span></button>
                 </form>
                 <p class="demo-note"><strong>Важно: это демо-версия.</strong> Аккаунт хранится только в этом браузере.
-                    Для настоящих пользователей, безопасной авторизации и GPS-трекинга понадобится сервер.</p>
+                    Для настоящей авторизации, защиты данных и GPS-трекинга понадобится сервер.</p>
                 <p class="auth-switch-hint"><span id="authSwitchText">Уже есть аккаунт?</span> <button type="button"
                         id="authSwitchButton">Войти</button></p>
             </div>
@@ -525,8 +554,8 @@
                             maxlength="40" required></label>
                     <label class="form-field"><span>Куда</span><input id="tripTo" placeholder="Казань" maxlength="40"
                             required></label>
-                    <label class="form-field"><span>Что везём</span><input id="tripCargo" placeholder="Например, текстиль"
-                            maxlength="80"></label>
+                    <label class="form-field"><span>Что везём</span><input id="tripCargo"
+                            placeholder="Например, текстиль" maxlength="80"></label>
                     <label class="form-field"><span>Клиент</span><select id="tripClient">
                             <option value="">Не выбран</option>
                         </select></label>
