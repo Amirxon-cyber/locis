@@ -155,7 +155,9 @@
             && ["moving", "delayed", "stopped", "delivered", "cancelled"].includes(item.status)
             && Number.isFinite(item.progress) && Number.isFinite(item.x) && Number.isFinite(item.y)
             && (item.gps === undefined || (item.gps && Number.isFinite(item.gps.latitude) && Number.isFinite(item.gps.longitude)
-                && Number.isFinite(item.gps.accuracy) && Number.isFinite(item.gps.updatedAt)));
+                && (item.gps.accuracy === undefined || Number.isFinite(item.gps.accuracy))
+                && (item.gps.source === undefined || ["device", "manual"].includes(item.gps.source))
+                && Number.isFinite(item.gps.updatedAt)));
     }
 
     function saveTrucks() {
@@ -537,11 +539,20 @@
         byId("detailsTitle").textContent = `${truck.id} · ${truck.plate}`;
         byId("detailsSubtitle").textContent = `${truck.from} → ${truck.to}`;
         byId("truckDetailsPhoto").innerHTML = `<img src="${truckPhoto(truck)}" alt="Фура ${escapeHTML(truck.plate)}">`;
+        const status = ensureGpsStatus();
+        status.className = `gps-status${truck.gps ? " is-live" : ""}`;
+        if (truck.gps) {
+            const source = truck.gps.source === "manual" ? "Координаты введены вручную" : "GPS этого устройства";
+            const updated = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(truck.gps.updatedAt);
+            status.textContent = `${source} · ${updated}${truck.gps.accuracy ? ` · точность ${Math.round(truck.gps.accuracy)} м` : ""}`;
+        } else {
+            status.textContent = "Позиция примерная. Добавьте координаты или получите GPS этого устройства.";
+        }
         const rows = [
             ["Статус", statusLabels[truck.status]],
             ["Водитель", truck.driver],
             ["Местоположение", truck.location],
-            [coordinates.isGps ? "GPS устройства" : "Примерные координаты", `${coordinates.latitude.toFixed(5)}, ${coordinates.longitude.toFixed(5)}${truck.gps?.accuracy ? ` · точность ${Math.round(truck.gps.accuracy)} м` : ""}`],
+            [coordinates.isGps ? truck.gps.source === "manual" ? "Введённые координаты" : "GPS устройства" : "Примерные координаты", `${coordinates.latitude.toFixed(5)}, ${coordinates.longitude.toFixed(5)}${truck.gps?.accuracy ? ` · точность ${Math.round(truck.gps.accuracy)} м` : ""}`],
             ["Ожидаемое прибытие", truck.eta],
             ["Прогресс рейса", `${truck.progress}%`],
             ["Клиент", truck.client || "Не указан"],
@@ -566,30 +577,105 @@
         byId("locateSelectedTruck").onclick = () => captureTruckGps(truck.id);
         byId("resetTruckGps").hidden = !truck.gps;
         byId("resetTruckGps").onclick = () => resetTruckGps(truck.id);
+        const manualForm = ensureManualGpsForm();
+        manualForm.elements.latitude.value = truck.gps?.latitude ?? "";
+        manualForm.elements.longitude.value = truck.gps?.longitude ?? "";
+        const formError = manualForm.querySelector(".gps-form-error");
+        formError.textContent = "";
+        formError.hidden = true;
+        manualForm.onsubmit = (event) => saveManualGps(event, truck.id);
         openModal("truckDetailsModal");
     }
 
-    function captureTruckGps(id) {
+    function ensureGpsStatus() {
+        let status = byId("gpsStatus");
+        if (!status) {
+            status = document.createElement("p");
+            status.id = "gpsStatus";
+            status.className = "gps-status";
+            status.setAttribute("role", "status");
+            byId("detailsSubtitle").after(status);
+        }
+        return status;
+    }
+
+    function ensureManualGpsForm() {
+        let form = byId("manualGpsForm");
+        if (!form) {
+            form = document.createElement("form");
+            form.id = "manualGpsForm";
+            form.className = "gps-manual-form";
+            form.innerHTML = `<label>Широта<input name="latitude" type="number" min="-90" max="90" step="any" placeholder="55.7558" required></label><label>Долгота<input name="longitude" type="number" min="-180" max="180" step="any" placeholder="37.6173" required></label><button class="button button-outline" type="submit">Сохранить координаты</button><p class="gps-form-error" role="alert" hidden></p>`;
+            byId("truckDetailsList").after(form);
+        }
+        return form;
+    }
+
+    function setGpsError(message) {
+        ensureGpsStatus().textContent = message;
+        ensureGpsStatus().classList.remove("is-live");
+        showToast(message, true);
+    }
+
+    function saveManualGps(event, id) {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const latitude = Number(form.elements.latitude.value);
+        const longitude = Number(form.elements.longitude.value);
+        const error = form.querySelector(".gps-form-error");
+        if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90
+            || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+            error.textContent = "Введите широту от −90 до 90 и долготу от −180 до 180.";
+            error.hidden = false;
+            return;
+        }
+        error.hidden = true;
         const truck = trucks.find((item) => item.id === id);
         if (!truck) {
-            showToast("Сначала выберите машину.", true);
+            setGpsError("Машина больше не найдена. Обновите список и попробуйте снова.");
+            return;
+        }
+        const gps = { latitude, longitude, source: "manual", updatedAt: Date.now() };
+        trucks = trucks.map((item) => item.id === id
+            ? { ...item, gps, location: `Координаты введены · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}` }
+            : item);
+        const updatedTruck = trucks.find((item) => item.id === id);
+        saveTrucks();
+        renderFleet();
+        renderRoutes();
+        addActivity("Обновлены координаты машины", `${id} · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, "created");
+        byId("lastUpdated").textContent = "только что";
+        showTruckDetails(updatedTruck);
+        if (fleetMap) fleetMap.setView([latitude, longitude], 12);
+        showToast(`Координаты сохранены для ${id}.`);
+    }
+
+    async function captureTruckGps(id) {
+        const truck = trucks.find((item) => item.id === id);
+        if (!truck) {
+            setGpsError("Сначала выберите машину в автопарке.");
             return;
         }
         if (!navigator.geolocation) {
-            showToast("Браузер не поддерживает геолокацию.", true);
+            setGpsError("В этом браузере нет GPS. Введите координаты вручную или откройте сайт в актуальном браузере.");
             return;
         }
-        if (!window.isSecureContext && location.hostname !== "localhost") {
-            showToast("GPS доступен через HTTPS или localhost. Откройте сайт в защищённом соединении.", true);
+        const localHost = ["localhost", "127.0.0.1", "::1"].includes(location.hostname);
+        if (!window.isSecureContext && !localHost) {
+            setGpsError("Браузер блокирует GPS в незашифрованной версии сайта. Откройте HTTPS-адрес или localhost; координаты можно ввести вручную ниже.");
             return;
         }
         const detailsAreOpen = !byId("truckDetailsModal").hidden;
-        showToast("Запрашиваю GPS этого устройства. Разрешите доступ к местоположению.");
+        const status = ensureGpsStatus();
+        status.className = "gps-status is-pending";
+        status.textContent = "Запрашиваю GPS устройства… Подтвердите доступ в браузере.";
+        showToast("Запрашиваю GPS устройства. Если появится запрос браузера — разрешите доступ.");
         navigator.geolocation.getCurrentPosition(({ coords }) => {
             const gps = {
                 latitude: coords.latitude,
                 longitude: coords.longitude,
                 accuracy: coords.accuracy,
+                source: "device",
                 updatedAt: Date.now()
             };
             trucks = trucks.map((item) => item.id === id
@@ -603,15 +689,20 @@
             byId("lastUpdated").textContent = "только что";
             if (detailsAreOpen) showTruckDetails(updatedTruck);
             if (fleetMap) fleetMap.setView([gps.latitude, gps.longitude], 12);
-            showToast(`GPS сохранён для ${id} · точность около ${Math.round(gps.accuracy)} м.`);
+            showToast(`GPS устройства сохранён для ${id} · точность около ${Math.round(gps.accuracy)} м.`);
         }, (error) => {
             const messages = {
-                1: "Нет разрешения на геолокацию. Разрешите доступ к GPS в настройках браузера.",
-                2: "Устройство не смогло определить местоположение. Проверьте GPS и попробуйте снова.",
-                3: "GPS-запрос занял слишком много времени. Попробуйте ещё раз."
+                1: "Браузер запретил GPS. Нажмите замок рядом с адресом сайта → Настройки сайта → Местоположение → Разрешить, затем повторите запрос.",
+                2: "Устройство не смогло определить GPS. Включите геолокацию Windows/телефона и Wi‑Fi или введите координаты вручную.",
+                3: "GPS не ответил за 30 секунд. Проверьте сигнал и повторите запрос или введите координаты вручную."
             };
-            showToast(messages[error.code] || "Не удалось получить GPS. Проверьте разрешение браузера.", true);
-        }, { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 });
+            const message = messages[error.code] || `GPS-ошибка${error.message ? `: ${error.message}` : ""}. Проверьте разрешение браузера или введите координаты вручную.`;
+            if (detailsAreOpen) {
+                ensureGpsStatus().textContent = message;
+                ensureGpsStatus().classList.remove("is-live", "is-pending");
+            }
+            showToast(message, true);
+        }, { enableHighAccuracy: true, timeout: 30_000, maximumAge: 10_000 });
     }
 
     function resetTruckGps(id) {
