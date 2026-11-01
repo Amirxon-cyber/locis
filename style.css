@@ -3453,6 +3453,39 @@ svg {
     color: #d4dfeb;
 }
 
+:root[data-theme="dark"] .overview-aux .aux-card {
+    border-color: #2b3a50;
+    background: #192538;
+    color: #e4eaf3;
+    box-shadow: var(--shadow);
+}
+
+:root[data-theme="dark"] .overview-aux .aux-card.accent {
+    background: linear-gradient(135deg, #1d304b 0%, #192538 80%);
+}
+
+:root[data-theme="dark"] .overview-aux .aux-label {
+    color: #a4b2c5;
+}
+
+:root[data-theme="dark"] .overview-aux .aux-card h3,
+:root[data-theme="dark"] .overview-aux .aux-meta strong {
+    color: #e4eaf3;
+}
+
+:root[data-theme="dark"] .overview-aux .aux-card small,
+:root[data-theme="dark"] .overview-aux .aux-meta {
+    color: #a4b2c5;
+}
+
+:root[data-theme="dark"] .overview-aux .aux-meta.success {
+    color: #8fe0bc;
+}
+
+:root[data-theme="dark"] .overview-aux .aux-progress {
+    background: #2b3a50;
+}
+
 :root[data-theme="dark"] .portal-shortcut:hover {
     border-color: #526c93;
     background: #203047;
