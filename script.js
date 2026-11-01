@@ -9,7 +9,8 @@
         clients: "transline-demo-clients",
         company: "transline-demo-company",
         activity: "transline-demo-activity",
-        theme: "transline-demo-theme"
+        theme: "transline-demo-theme",
+        routeSubscriptions: "transline-demo-route-subscriptions"
     };
     const starterTrucks = [
         { id: "RF-204", plate: "А781МР 799", driver: "Сергей Козлов", from: "Москва", to: "Казань", location: "Трасса М-7, 42 км", status: "moving", eta: "14:30", progress: 68, x: 54, y: 48 },
@@ -68,6 +69,8 @@
         { id: "EV-2", title: "Новый рейс", description: "RF-118 выехал из Москвы · Андрей Морозов", kind: "departed", createdAt: Date.now() - 34 * 60_000 },
         { id: "EV-3", title: "Задержка в пути", description: "RF-073 задерживается на трассе М-7 · Иван Петров", kind: "warning", createdAt: Date.now() - 48 * 60_000 }
     ], (item) => item && ["id", "title", "description", "kind"].every((key) => typeof item[key] === "string") && Number.isFinite(item.createdAt));
+    let routeSubscriptions = loadCollection(storageKeys.routeSubscriptions, [],
+        (item) => item && ["id", "query"].every((key) => typeof item[key] === "string") && Number.isFinite(item.createdAt));
     let activeFilter = "all";
     let selectedTruckId = trucks[0]?.id ?? null;
     let searchQuery = "";
@@ -204,6 +207,92 @@
         } catch (error) {
             console.error("Не удалось сохранить демо-рейс.", error);
             showToast("Не удалось сохранить рейс в браузере. Он останется в списке до перезагрузки.", true);
+        }
+    }
+
+    function saveRouteSubscriptions(nextSubscriptions = routeSubscriptions) {
+        try {
+            localStorage.setItem(storageKeys.routeSubscriptions, JSON.stringify(nextSubscriptions));
+            routeSubscriptions = nextSubscriptions;
+            return true;
+        } catch (error) {
+            console.error("Не удалось сохранить подписки на маршруты.", error);
+            showToast("Не удалось сохранить подписку в браузере.", true);
+            return false;
+        }
+    }
+
+    function normalizeSearchText(value) {
+        return value.toLocaleLowerCase("ru").replace(/[^\p{L}\p{N}]+/gu, " ").trim().replace(/\s+/g, " ");
+    }
+
+    function isRecentListing(record) {
+        return Number.isFinite(record.createdAt) && record.createdAt >= Date.now() - 365 * 24 * 60 * 60 * 1000;
+    }
+
+    function findMatchingTrucks(query) {
+        const terms = normalizeSearchText(query).split(" ").filter(Boolean);
+        if (!terms.length) return [];
+        return trucks.filter((truck) => ["moving", "delayed", "stopped"].includes(truck.status)
+            && isRecentListing(truck)
+            && terms.every((term) => normalizeSearchText([
+                truck.from, truck.to, truck.cargo || "", truck.client || "", truck.driver, truck.plate, truck.id
+            ].join(" ")).includes(term)));
+    }
+
+    function renderSmartSearchResults(query) {
+        const results = byId("smartSearchResults");
+        const normalizedQuery = normalizeSearchText(query);
+        if (!normalizedQuery) {
+            results.hidden = true;
+            results.replaceChildren();
+            return;
+        }
+        const matchingTrucks = findMatchingTrucks(query);
+        const matchingClients = clients.filter((client) =>
+            normalizeSearchText([client.name, client.city, client.contact].join(" ")).includes(normalizedQuery));
+        const cards = matchingTrucks.map((truck) => {
+            const client = clients.find((item) => item.name === truck.client);
+            const companyStatus = client?.verified === true
+                ? '<span class="verification-badge verified">✓ Проверена</span>'
+                : '<span class="verification-badge">Проверка не проводилась</span>';
+            const lastUpdated = Number.isFinite(client?.updatedAt)
+                ? `Контакты обновлены ${new Intl.DateTimeFormat("ru-RU").format(client.updatedAt)}`
+                : "Дата обновления контактов не указана";
+            return `<article class="search-result-card"><div><span class="search-route">${escapeHTML(truck.from)} <b>→</b> ${escapeHTML(truck.to)}</span><small>${escapeHTML(truck.cargo || "Груз не указан")} · ${escapeHTML(truck.id)}</small></div><div class="search-result-meta"><span class="table-status ${escapeHTML(truck.status)}">${escapeHTML(statusLabels[truck.status])}</span>${client ? `${companyStatus}<small>${escapeHTML(lastUpdated)}</small>` : '<span class="verification-badge">Компания не указана</span>'}</div><button type="button" class="table-action" data-search-trip="${escapeHTML(truck.id)}">Открыть рейсы →</button></article>`;
+        }).join("");
+        const companyCards = matchingClients.map((client) => {
+            const status = client.verified === true
+                ? '<span class="verification-badge verified">✓ Проверена</span>'
+                : '<span class="verification-badge">Проверка не проводилась</span>';
+            const updated = Number.isFinite(client.updatedAt)
+                ? new Intl.DateTimeFormat("ru-RU").format(client.updatedAt)
+                : "дата не указана";
+            return `<article class="search-result-card"><div><span class="search-route">${escapeHTML(client.name)}</span><small>${escapeHTML(client.city)} · ${escapeHTML(client.contact)}</small></div><div class="search-result-meta">${status}<small>Контакты обновлены: ${updated}</small></div></article>`;
+        }).join("");
+        const emptyMessage = `<p class="search-empty">Свежих совпадений не найдено. Проверьте запрос или добавьте рейс. Записи старше года не показываются в поиске.</p>`;
+        results.innerHTML = `<div class="search-results-heading"><strong>Результаты поиска</strong><span>${matchingTrucks.length} рейсов · ${matchingClients.length} компаний</span></div>${cards}${companyCards}${cards || companyCards ? "" : emptyMessage}<p class="search-data-note">Демо-данные. Статус проверки компании подтверждается только после внешней проверки документов; здесь она не подключена.</p>`;
+        results.hidden = false;
+        results.querySelectorAll("[data-search-trip]").forEach((button) => {
+            button.addEventListener("click", () => document.querySelector('.nav-link[data-page="trips"]').click());
+        });
+    }
+
+    function addRouteSubscription(query) {
+        const normalized = normalizeSearchText(query);
+        if (normalized.length < 3) {
+            showToast("Введите маршрут или ключевые слова для подписки.", true);
+            byId("smartSearchQuery").focus();
+            return;
+        }
+        if (routeSubscriptions.some((item) => normalizeSearchText(item.query) === normalized)) {
+            showToast("Такая подписка уже сохранена.", true);
+            return;
+        }
+        const nextSubscriptions = [{ id: `SUB-${Date.now()}`, query: query.trim(), createdAt: Date.now() }, ...routeSubscriptions];
+        if (saveRouteSubscriptions(nextSubscriptions)) {
+            showToast("Маршрут сохранён. Сейчас подписка работает только в этом браузере; Telegram пока не подключён.");
+            if (currentPage === "market") renderWorkspacePage("market");
         }
     }
 
@@ -381,7 +470,8 @@
 
     function renderRoutes() {
         routesTableBody.replaceChildren();
-        const activeRoutes = trucks.filter((truck) => !["stopped", "delivered", "cancelled"].includes(truck.status)).slice(0, 4);
+        const activeRoutes = trucks.filter((truck) => !["stopped", "delivered", "cancelled"].includes(truck.status)
+            && isRecentListing(truck)).slice(0, 4);
         if (activeRoutes.length === 0) {
             const row = document.createElement("tr");
             row.innerHTML = '<td colspan="4" class="table-empty"><span>Активных рейсов пока нет.</span><button class="empty-create-button" type="button">Создать первый рейс</button></td>';
@@ -802,10 +892,38 @@
     }
 
     function renderClientsPage() {
-        const rows = clients.map((client) => `<tr><td><strong>${escapeHTML(client.name)}</strong><small>${escapeHTML(client.id)}</small></td><td>${escapeHTML(client.contact)}</td><td>${escapeHTML(client.email)}</td><td>${escapeHTML(client.phone)}</td><td>${escapeHTML(client.city)}</td><td>${client.orders}</td><td><button class="table-action" data-action="edit-client" data-id="${escapeHTML(client.id)}">Изменить</button><button class="table-action danger" data-action="delete-client" data-id="${escapeHTML(client.id)}">Удалить</button></td></tr>`).join("");
+        const rows = clients.map((client) => {
+            const verification = client.verified === true
+                ? '<span class="verification-badge verified">✓ Проверена</span>'
+                : '<span class="verification-badge">Не проверена</span>';
+            const updated = Number.isFinite(client.updatedAt)
+                ? `Обновлено ${new Intl.DateTimeFormat("ru-RU").format(client.updatedAt)}`
+                : "Обновление не указано";
+            return `<tr><td><strong>${escapeHTML(client.name)}</strong><small>${escapeHTML(client.id)}</small>${verification}<small>${updated}</small></td><td>${escapeHTML(client.contact)}</td><td>${escapeHTML(client.email)}</td><td>${escapeHTML(client.phone)}</td><td>${escapeHTML(client.city)}</td><td>${client.orders}</td><td><button class="table-action" data-action="edit-client" data-id="${escapeHTML(client.id)}">Изменить</button><button class="table-action danger" data-action="delete-client" data-id="${escapeHTML(client.id)}">Удалить</button></td></tr>`;
+        }).join("");
         return `${makePageHeader("Клиенты", "Компании-заказчики, контакты и история отправок.", "Добавить клиента", "add-client")}
           <div class="page-stat-row"><article><span>Клиентов</span><strong>${clients.length}</strong></article><article><span>Перевозок выполнено</span><strong>${clients.reduce((total, item) => total + item.orders, 0)}</strong></article><article><span>Городов доставки</span><strong>${new Set(clients.map((item) => item.city)).size}</strong></article></div>
-          <div class="panel data-panel"><div class="data-panel-head"><div><h2>База клиентов</h2><p>Контактные данные ваших заказчиков</p></div><span class="table-total">${clients.length} компаний</span></div><div class="responsive-table"><table class="data-table"><thead><tr><th>КОМПАНИЯ</th><th>КОНТАКТ</th><th>ПОЧТА</th><th>ТЕЛЕФОН</th><th>ГОРОД</th><th>ЗАКАЗЫ</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="7" class="table-empty">Пока нет клиентов. Добавьте первого заказчика.</td></tr>`}</tbody></table></div></div>`;
+          <div class="verification-notice">Статус «Проверена» можно показывать только после проверки документов по официальным реестрам. В демо-версии проверка не выполняется; для старых записей дата обновления не указана.</div>
+          <div class="panel data-panel"><div class="data-panel-head"><div><h2>База клиентов</h2><p>Контакты, статус проверки и актуальность данных</p></div><span class="table-total">${clients.length} компаний</span></div><div class="responsive-table"><table class="data-table"><thead><tr><th>КОМПАНИЯ И СТАТУС</th><th>КОНТАКТ</th><th>ПОЧТА</th><th>ТЕЛЕФОН</th><th>ГОРОД</th><th>ЗАКАЗЫ</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="7" class="table-empty">Пока нет клиентов. Добавьте первого заказчика.</td></tr>`}</tbody></table></div></div>`;
+    }
+
+    function renderMarketPage() {
+        const subscriptions = routeSubscriptions.map((subscription) =>
+            `<article class="subscription-card"><div><strong>${escapeHTML(subscription.query)}</strong><small>Создана ${new Intl.DateTimeFormat("ru-RU").format(subscription.createdAt)}</small></div><button class="table-action danger" data-action="delete-route-subscription" data-id="${escapeHTML(subscription.id)}">Удалить</button></article>`
+        ).join("");
+        const recentCount = trucks.filter((truck) => ["moving", "delayed", "stopped"].includes(truck.status) && isRecentListing(truck)).length;
+        const borderItems = [
+            ["Казахстан", "Очереди и режимы пропуска: оперативный источник не подключён."],
+            ["Узбекистан", "Пошлины и правила транзита: требуется проверка по официальным актуальным источникам."],
+            ["Таджикистан", "Маршрутные условия и документы: оперативная база не подключена."]
+        ].map(([country, detail]) => `<article class="border-info-card"><span class="border-country">${country}</span><p>${detail}</p><span class="border-feed-status"><i></i> Нет live-данных</span></article>`).join("");
+        return `${makePageHeader("Ставки и маршруты", "Ищите свежие демо-предложения, сохраняйте направления и проверяйте актуальность данных.")}
+          <div class="page-stat-row"><article><span>Свежих демо-рейсов</span><strong>${recentCount}</strong></article><article><span>Подписок на маршруты</span><strong>${routeSubscriptions.length}</strong></article><article><span>Проверенных компаний</span><strong>${clients.filter((client) => client.verified === true).length}</strong></article></div>
+          <div class="market-grid">
+            <section class="panel market-section"><div class="data-panel-head"><div><h2>Подписки на направления</h2><p>Сохранённые запросы остаются в этом браузере</p></div></div><div class="subscription-list">${subscriptions || '<p class="table-empty">Подписок пока нет. Сохраните запрос с главной страницы.</p>'}</div><p class="market-note">Оповещения пока показываются только внутри этого браузера при добавлении подходящего демо-рейса. Для Telegram нужен серверный бот и API.</p></section>
+            <section class="panel market-section"><div class="data-panel-head"><div><h2>Границы и транзит</h2><p>Очереди и пошлины не загружаются автоматически</p></div></div><div class="border-info-list">${borderItems}</div><p class="market-note">Не используйте эти карточки как таможенную консультацию: подключите подтверждённые официальные источники и регулярно обновляемый API.</p></section>
+          </div>
+          <section class="panel market-section market-freshness"><div class="data-panel-head"><div><h2>Актуальность предложений</h2><p>Старые активные записи скрываются из поиска автоматически</p></div></div><p>Рейсы старше 365 дней не отображаются в поиске на главной. История и исходные записи не удаляются из браузера.</p></section>`;
     }
 
     function renderAnalyticsPage() {
@@ -923,6 +1041,7 @@
         analytics: renderAnalyticsPage,
         finance: renderFinancePage,
         calculator: renderCalculatorPage,
+        market: renderMarketPage,
         settings: renderSettingsPage
     };
 
@@ -1016,6 +1135,13 @@
         if (action === "import-backup") return byId("backupFile").click();
         if (action === "reset-data") return resetDemoData();
         if (action === "toggle-theme") return setTheme(currentTheme === "dark" ? "light" : "dark");
+        if (action === "delete-route-subscription") {
+            const nextSubscriptions = routeSubscriptions.filter((item) => item.id !== id);
+            if (saveRouteSubscriptions(nextSubscriptions)) {
+                renderWorkspacePage("market");
+                showToast("Подписка удалена.");
+            }
+        }
     }
 
     function openTripModal() {
@@ -1124,7 +1250,18 @@
             saveCollection(storageKeys.drivers, drivers, starterDrivers);
             addActivity(editingRecordId ? "Данные водителя изменены" : "Водитель добавлен", record.name, "created");
         } else {
-            const record = { id: editingRecordId || `CL-${Date.now().toString().slice(-6)}`, name: values.name.trim(), contact: values.contact.trim(), email: values.email.trim(), phone: values.phone.trim(), city: values.city.trim(), orders: Math.max(0, Number(values.orders) || 0) };
+            const existing = clients.find((item) => item.id === editingRecordId);
+            const record = {
+                ...(existing || {}),
+                id: existing?.id || `CL-${Date.now().toString().slice(-6)}`,
+                name: values.name.trim(),
+                contact: values.contact.trim(),
+                email: values.email.trim(),
+                phone: values.phone.trim(),
+                city: values.city.trim(),
+                orders: Math.max(0, Number(values.orders) || 0),
+                updatedAt: Date.now()
+            };
             clients = editingRecordId ? clients.map((item) => item.id === editingRecordId ? record : item) : [record, ...clients];
             saveCollection(storageKeys.clients, clients, starterClients);
             addActivity(editingRecordId ? "Карточка клиента изменена" : "Клиент добавлен", record.name, "created");
@@ -1199,7 +1336,7 @@
     }
 
     function exportBackup() {
-        const backup = { app: "transline-demo", version: 1, exportedAt: new Date().toISOString(), trucks, drivers, clients, activities };
+        const backup = { app: "transline-demo", version: 1, exportedAt: new Date().toISOString(), trucks, drivers, clients, activities, routeSubscriptions };
         downloadFile(JSON.stringify(backup, null, 2), "transline-backup.json", "application/json");
     }
 
@@ -1217,14 +1354,16 @@
                 && Array.isArray(backup.trucks) && backup.trucks.every(isValidTruck)
                 && Array.isArray(backup.drivers) && backup.drivers.every((item) => item && ["id", "name", "phone", "license", "status"].every((key) => typeof item[key] === "string"))
                 && Array.isArray(backup.clients) && backup.clients.every((item) => item && ["id", "name", "contact", "email", "phone", "city"].every((key) => typeof item[key] === "string") && Number.isFinite(item.orders))
-                && (!backup.activities || (Array.isArray(backup.activities) && backup.activities.every((item) => item && ["id", "title", "description", "kind"].every((key) => typeof item[key] === "string") && Number.isFinite(item.createdAt))));
+                && (!backup.activities || (Array.isArray(backup.activities) && backup.activities.every((item) => item && ["id", "title", "description", "kind"].every((key) => typeof item[key] === "string") && Number.isFinite(item.createdAt))))
+                && (!backup.routeSubscriptions || (Array.isArray(backup.routeSubscriptions) && backup.routeSubscriptions.every((item) => item && ["id", "query"].every((key) => typeof item[key] === "string") && Number.isFinite(item.createdAt))));
             if (!isValid) throw new Error("Это не резервная копия ТрансЛайн или файл содержит неверные данные.");
             const nextActivities = backup.activities || [];
             const entries = [
                 [storageKeys.trucks, backup.trucks],
                 [storageKeys.drivers, backup.drivers],
                 [storageKeys.clients, backup.clients],
-                [storageKeys.activity, nextActivities]
+                [storageKeys.activity, nextActivities],
+                [storageKeys.routeSubscriptions, backup.routeSubscriptions || []]
             ];
             const previous = entries.map(([key]) => [key, localStorage.getItem(key)]);
             try {
@@ -1240,6 +1379,7 @@
             drivers = backup.drivers;
             clients = backup.clients;
             activities = nextActivities;
+            routeSubscriptions = backup.routeSubscriptions || [];
             selectedTruckId = trucks[0]?.id ?? null;
             updateMetrics();
             renderFleet();
@@ -1270,6 +1410,7 @@
         trucks = normalizeTrucks(starterTrucks);
         drivers = starterDrivers.map((item) => ({ ...item }));
         clients = starterClients.map((item) => ({ ...item }));
+        routeSubscriptions = [];
         activities = [
             { id: "EV-1", title: "Доставка завершена", description: "RF-204 доставил груз в Казань · Сергей Козлов", kind: "delivered", createdAt: Date.now() - 12 * 60_000 },
             { id: "EV-2", title: "Новый рейс", description: "RF-118 выехал из Москвы · Андрей Морозов", kind: "departed", createdAt: Date.now() - 34 * 60_000 },
@@ -1277,7 +1418,7 @@
         ];
         selectedTruckId = trucks[0].id;
         try {
-            [storageKeys.trucks, storageKeys.drivers, storageKeys.clients, storageKeys.activity].forEach((key) => localStorage.removeItem(key));
+            [storageKeys.trucks, storageKeys.drivers, storageKeys.clients, storageKeys.activity, storageKeys.routeSubscriptions].forEach((key) => localStorage.removeItem(key));
         } catch (error) {
             console.error("Не удалось очистить сохранённые демо-данные.", error);
             showToast("Не удалось очистить браузерное хранилище.", true);
@@ -1567,6 +1708,7 @@
         const driver = byId("tripDriver").value;
         const from = byId("tripFrom").value.trim();
         const to = byId("tripTo").value.trim();
+        const cargo = byId("tripCargo").value.trim();
         const client = byId("tripClient").value;
         const amount = Number(byId("tripAmount").value) || 0;
         const etaInput = byId("tripEta").value;
@@ -1591,7 +1733,7 @@
         const position = trucks.length;
         const newTruck = {
             id: `RF-${String(sequence).padStart(3, "0")}`,
-            plate, driver, from, to,
+            plate, driver, from, to, cargo,
             location: `Выезд из г. ${from}`,
             client,
             amount,
@@ -1616,7 +1758,12 @@
         addActivity("Создан новый рейс", `${newTruck.id} · ${from} → ${to} · ${driver}`, "created");
         if (currentPage === "trips") renderWorkspacePage("trips");
         closeModal(byId("tripModal"));
-        showToast(`Рейс ${newTruck.id} добавлен в демо-автопарк.`);
+        const matchesSubscription = routeSubscriptions.some((subscription) =>
+            normalizeSearchText(subscription.query).split(" ").filter(Boolean).every((term) =>
+                normalizeSearchText([newTruck.from, newTruck.to, newTruck.cargo, newTruck.client, newTruck.driver].join(" ")).includes(term)));
+        showToast(matchesSubscription
+            ? `Рейс ${newTruck.id} совпал с подпиской. Уведомление показано только здесь; Telegram не подключён.`
+            : `Рейс ${newTruck.id} добавлен в демо-автопарк.`);
     });
 
     byId("demoAccessButton").addEventListener("click", () => {
@@ -1689,6 +1836,13 @@
         button.addEventListener("click", () => {
             document.querySelector(`.nav-link[data-page="${button.dataset.page}"]`).click();
         });
+    });
+    byId("smartSearchForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        renderSmartSearchResults(byId("smartSearchQuery").value);
+    });
+    byId("subscribeSearchButton").addEventListener("click", () => {
+        addRouteSubscription(byId("smartSearchQuery").value);
     });
     byId("portalCreateTrip").addEventListener("click", openTripModal);
     byId("allRoutesButton").addEventListener("click", () => {

@@ -3949,6 +3949,349 @@ svg {
     width: min(560px, 100%);
 }
 
+.smart-search-panel {
+    margin: 0 0 14px;
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    padding: 17px 19px 13px;
+    background: #fff;
+    box-shadow: var(--shadow);
+}
+
+.smart-search-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.smart-search-heading .portal-eyebrow {
+    margin-bottom: 4px;
+}
+
+.smart-search-heading h2 {
+    margin: 0;
+    color: #263c5a;
+    font: 750 16px Manrope, sans-serif;
+}
+
+.smart-search-heading>span,
+.smart-search-hint {
+    color: #8995a8;
+    font-size: 8px;
+}
+
+.smart-search-form {
+    display: flex;
+    min-height: 43px;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #dfe5ef;
+    border-radius: 9px;
+    padding: 4px 5px 4px 12px;
+    background: #fbfcfe;
+}
+
+.smart-search-form>svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    color: #8d9ab0;
+}
+
+.smart-search-form input {
+    width: 100%;
+    min-width: 0;
+    height: 32px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 10px;
+}
+
+.smart-search-form .button {
+    min-height: 32px;
+    padding: 0 11px;
+    font-size: 9px;
+    white-space: nowrap;
+}
+
+.smart-search-hint {
+    margin: 8px 0 0;
+}
+
+.smart-search-results {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+}
+
+.smart-search-results[hidden] {
+    display: none;
+}
+
+.search-results-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 9px;
+}
+
+.search-results-heading span,
+.search-result-card small {
+    color: #8995a8;
+    font-size: 8px;
+}
+
+.search-result-card {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 9px 11px;
+}
+
+.search-result-card>div:first-child,
+.search-result-meta {
+    display: grid;
+    justify-items: start;
+    gap: 4px;
+}
+
+.search-route {
+    color: #34445c;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.verification-badge {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    border: 1px solid #e8d9b8;
+    border-radius: 20px;
+    padding: 3px 7px;
+    background: #fff8e9;
+    color: #9c7538;
+    font-size: 7px;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.verification-badge.verified {
+    border-color: #c9e8d9;
+    background: #eff9f3;
+    color: #2f815d;
+}
+
+.verification-notice,
+.market-note {
+    margin: 0 0 12px;
+    border: 1px solid #e5eaf2;
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: #f8faff;
+    color: #718097;
+    font-size: 9px;
+    line-height: 1.6;
+}
+
+.search-data-note {
+    margin: 1px 0 0;
+    color: #8995a8;
+    font-size: 8px;
+    line-height: 1.5;
+}
+
+.search-empty {
+    margin: 0;
+    padding: 10px;
+    color: #78869a;
+    font-size: 9px;
+}
+
+.market-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 13px;
+}
+
+.market-section {
+    padding: 0 15px 13px;
+}
+
+.market-section .data-panel-head {
+    padding-right: 0;
+    padding-left: 0;
+}
+
+.subscription-list,
+.border-info-list {
+    display: grid;
+    gap: 8px;
+}
+
+.subscription-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.subscription-card>div {
+    display: grid;
+    gap: 4px;
+}
+
+.subscription-card strong,
+.border-country {
+    color: #34445c;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.subscription-card small {
+    color: #8995a8;
+    font-size: 8px;
+}
+
+.market-note {
+    margin: 11px 0 0;
+}
+
+.border-info-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.border-info-card p {
+    margin: 6px 0;
+    color: #7d899d;
+    font-size: 8px;
+    line-height: 1.5;
+}
+
+.border-feed-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #a16d39;
+    font-size: 7px;
+    font-weight: 700;
+}
+
+.border-feed-status i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.market-freshness {
+    margin-top: 13px;
+}
+
+.market-freshness>p {
+    margin: 0;
+    color: #7d899d;
+    font-size: 9px;
+    line-height: 1.6;
+}
+
+:root[data-theme="dark"] .smart-search-panel,
+:root[data-theme="dark"] .search-result-card,
+:root[data-theme="dark"] .subscription-card,
+:root[data-theme="dark"] .border-info-card {
+    border-color: var(--line);
+    background: #192538;
+}
+
+:root[data-theme="dark"] .smart-search-heading h2,
+:root[data-theme="dark"] .search-route,
+:root[data-theme="dark"] .subscription-card strong,
+:root[data-theme="dark"] .border-country {
+    color: #e5ebf5;
+}
+
+:root[data-theme="dark"] .smart-search-form {
+    border-color: #36465d;
+    background: #111c2c;
+}
+
+:root[data-theme="dark"] .smart-search-form input {
+    color: #e5ebf5;
+}
+
+:root[data-theme="dark"] .verification-notice,
+:root[data-theme="dark"] .market-note {
+    border-color: #34445b;
+    background: #202e42;
+    color: #bdc9d9;
+}
+
+:root[data-theme="dark"] .border-info-card p,
+:root[data-theme="dark"] .market-freshness>p,
+:root[data-theme="dark"] .search-data-note,
+:root[data-theme="dark"] .search-empty {
+    color: #9aaac0;
+}
+
+@media (max-width: 760px) {
+    .market-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .search-result-card {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .search-result-card>.table-action {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
+}
+
+@media (max-width: 520px) {
+    .smart-search-panel {
+        padding: 13px 12px 11px;
+    }
+
+    .smart-search-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .smart-search-form {
+        flex-wrap: wrap;
+        padding: 6px 8px;
+    }
+
+    .smart-search-form input {
+        width: calc(100% - 28px);
+    }
+
+    .smart-search-form .button {
+        flex: 1;
+    }
+
+    .search-result-card {
+        grid-template-columns: 1fr;
+    }
+}
+
 .activity-modal {
     width: min(500px, 100%);
 }

@@ -92,6 +92,11 @@
                         <path d="M8 7h8M8 11h2m4 0h2m-8 4h2m4 0h2m-8 4h2m4 0h2" />
                     </svg><span>Калькулятор</span>
                 </button>
+                <button class="nav-link" data-section="Ставки и маршруты" data-page="market">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-6M16 7h3v3" />
+                    </svg><span>Ставки и маршруты</span>
+                </button>
                 <button class="nav-link" data-section="Настройки" data-page="settings">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <circle cx="12" cy="12" r="3" />
@@ -164,6 +169,17 @@
                         </div>
                         <div class="portal-hero-art" role="img" aria-label="Грузовой автомобиль на маршруте"></div>
                         <div class="portal-hero-badge"><span></span> Единое рабочее пространство</div>
+                    </section>
+                    <section class="smart-search-panel" aria-label="Поиск перевозок">
+                        <div class="smart-search-heading"><div><p class="portal-eyebrow">ПОИСК ПО ПЕРЕВОЗКАМ</p><h2>Что нужно найти?</h2></div><span>Маршрут · груз · компания</span></div>
+                        <form class="smart-search-form" id="smartSearchForm">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4 4"/></svg>
+                            <input id="smartSearchQuery" type="search" placeholder="Например: Ташкент → Москва, текстиль" aria-label="Маршрут, груз или компания" maxlength="120">
+                            <button class="button button-primary" type="submit">Найти</button>
+                            <button class="button button-outline" id="subscribeSearchButton" type="button">Подписаться</button>
+                        </form>
+                        <p class="smart-search-hint">Поиск выполняется по демо-рейсам и сохранённым контактам в этом браузере.</p>
+                        <div class="smart-search-results" id="smartSearchResults" aria-live="polite" hidden></div>
                     </section>
                     <nav class="portal-shortcuts" aria-label="Разделы логистического портала">
                         <button class="portal-shortcut" data-page="trips"><span
@@ -509,6 +525,8 @@
                             maxlength="40" required></label>
                     <label class="form-field"><span>Куда</span><input id="tripTo" placeholder="Казань" maxlength="40"
                             required></label>
+                    <label class="form-field"><span>Что везём</span><input id="tripCargo" placeholder="Например, текстиль"
+                            maxlength="80"></label>
                     <label class="form-field"><span>Клиент</span><select id="tripClient">
                             <option value="">Не выбран</option>
                         </select></label>
