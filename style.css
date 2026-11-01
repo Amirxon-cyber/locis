@@ -2752,11 +2752,11 @@ svg {
     display: grid;
     gap: 14px;
     margin: 0 0 18px;
-    border: 1px solid var(--line);
+    border: 1px solid #dfe7f6;
     border-radius: 16px;
     padding: 16px;
-    background: linear-gradient(180deg, #f7f9ff 0%, #fff 90%);
-    box-shadow: var(--shadow);
+    background: linear-gradient(180deg, #f3f8ff 0%, #ffffff 100%);
+    box-shadow: 0 12px 28px rgb(86 111 177 / 10%);
 }
 
 .market-brief-top {
@@ -3461,6 +3461,75 @@ svg {
 :root[data-theme="dark"] .portal-shortcut small,
 :root[data-theme="dark"] .portal-shortcut>b {
     color: #9aabc1;
+}
+
+:root[data-theme="dark"] .market-brief,
+:root[data-theme="dark"] .market-search-panel,
+:root[data-theme="dark"] .catalog-panel,
+:root[data-theme="dark"] .announcement-panel,
+:root[data-theme="dark"] .company-card,
+:root[data-theme="dark"] .announcement-item,
+:root[data-theme="dark"] .feature-pill,
+:root[data-theme="dark"] .lang-switch,
+:root[data-theme="dark"] .currency-widget {
+    border-color: var(--line);
+    background: #172636;
+    color: var(--ink);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 2%);
+}
+
+:root[data-theme="dark"] .market-brief {
+    background: linear-gradient(180deg, #16263d 0%, #1a2d42 100%);
+}
+
+:root[data-theme="dark"] .lang-link,
+:root[data-theme="dark"] .support-link,
+:root[data-theme="dark"] .currency-widget a,
+:root[data-theme="dark"] .feature-pill small,
+:root[data-theme="dark"] .company-card-top small,
+:root[data-theme="dark"] .company-card-meta time,
+:root[data-theme="dark"] .announcement-item small,
+:root[data-theme="dark"] .market-search-form span,
+:root[data-theme="dark"] .market-search-head p {
+    color: #a4b8d2;
+}
+
+:root[data-theme="dark"] .lang-link.active,
+:root[data-theme="dark"] .lang-link:hover {
+    background: #243d5f;
+    color: #dfeaff;
+}
+
+:root[data-theme="dark"] .market-search-form input {
+    border-color: #2e4058;
+    background: #0f1a2a;
+    color: var(--ink);
+    color-scheme: dark;
+}
+
+:root[data-theme="dark"] .feature-emoji {
+    background: #1d375d;
+    color: #dfeaff;
+}
+
+:root[data-theme="dark"] .company-logo {
+    background: linear-gradient(145deg, #20385f, #1d2f52);
+    color: #dfeaff;
+}
+
+:root[data-theme="dark"] .company-logo.alt {
+    background: linear-gradient(145deg, #173c3a, #17322c);
+    color: #d3f2e7;
+}
+
+:root[data-theme="dark"] .verified-tag {
+    background: rgba(27, 144, 97, 0.18);
+    color: #8fe7bd;
+}
+
+:root[data-theme="dark"] .announcement-date {
+    background: #1d3453;
+    color: #dfeaff;
 }
 
 :root[data-theme="dark"] .calculator-result {
