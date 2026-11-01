@@ -9,6 +9,7 @@
         clients: "transline-demo-clients",
         company: "transline-demo-company",
         activity: "transline-demo-activity",
+        demoDataVersion: "transline-demo-data-version",
         theme: "transline-demo-theme",
         routeSubscriptions: "transline-demo-route-subscriptions",
         marketOffers: "transline-demo-market-offers",
@@ -22,7 +23,11 @@
         { id: "RF-073", plate: "Е902КТ 50", driver: "Иван Петров", from: "Нижний Новгород", to: "Казань", location: "Трасса М-7, пробка", status: "delayed", eta: "16:10", progress: 47, x: 68, y: 59 },
         { id: "RF-091", plate: "К115АА 77", driver: "Дмитрий Волков", from: "Москва", to: "Самара", location: "Рязань, пункт отдыха", status: "stopped", eta: "Завтра, 09:00", progress: 52, x: 72, y: 76 },
         { id: "RF-312", plate: "М544ХС 799", driver: "Олег Смирнов", from: "Тверь", to: "Москва", location: "Солнечногорск, М-10", status: "moving", eta: "12:20", progress: 81, x: 32, y: 31 },
-        { id: "RF-156", plate: "Р661УН 77", driver: "Максим Орлов", from: "Москва", to: "Нижний Новгород", location: "Владимирская обл., М-7", status: "moving", eta: "15:05", progress: 39, x: 47, y: 62 }
+        { id: "RF-156", plate: "Р661УН 77", driver: "Максим Орлов", from: "Москва", to: "Нижний Новгород", location: "Владимирская обл., М-7", status: "moving", eta: "15:05", progress: 39, x: 47, y: 62 },
+        { id: "RF-401", plate: "А123ВС 77", driver: "Тимур Саидов", from: "Москва", to: "Самара", location: "Рязанская область, М-5", status: "moving", eta: "18:20", progress: 42, x: 78, y: 34, cargo: "Текстиль", client: "Silk Road Logistics", amount: 56000 },
+        { id: "RF-402", plate: "В456ОР 50", driver: "Руслан Каримов", from: "Казань", to: "Екатеринбург", location: "Пермский край, трасса Р-242", status: "delayed", eta: "Завтра, 08:30", progress: 61, x: 81, y: 52, cargo: "Оборудование", client: "Восток Снаб", amount: 92000 },
+        { id: "RF-403", plate: "Е789КТ 16", driver: "Бахтиёр Юсупов", from: "Тверь", to: "Нижний Новгород", location: "Ярославская область", status: "moving", eta: "20:10", progress: 55, x: 70, y: 46, cargo: "Продукты", client: "Фергана Трейд", amount: 47500 },
+        { id: "RF-404", plate: "К321МН 116", driver: "Алишер Рахимов", from: "Москва", to: "Санкт-Петербург", location: "Тверская область, М-10", status: "stopped", eta: "Завтра, 07:45", progress: 33, x: 29, y: 38, cargo: "Стройматериалы", client: "УралКомплект", amount: 78500 }
     ];
     const statusLabels = { moving: "В пути", delayed: "Задержка", stopped: "Стоянка", delivered: "Доставлен", cancelled: "Отменён" };
     const documentTypes = ["CMR", "ТТН", "Счёт", "Страховка", "Разрешение", "Другое"];
@@ -44,13 +49,21 @@
         { id: "DR-104", name: "Дмитрий Волков", phone: "+7 916 771-02-13", license: "Водитель категории СЕ", status: "Отдых" },
         { id: "DR-105", name: "Олег Смирнов", phone: "+7 905 432-50-19", license: "Водитель категории Е", status: "На маршруте" },
         { id: "DR-106", name: "Максим Орлов", phone: "+7 999 180-71-62", license: "Водитель категории СЕ", status: "На маршруте" },
-        { id: "DR-107", name: "Анна Белова", phone: "+7 926 314-88-20", license: "Логист", status: "На базе" }
+        { id: "DR-107", name: "Анна Белова", phone: "+7 926 314-88-20", license: "Логист", status: "На базе" },
+        { id: "DR-108", name: "Тимур Саидов", phone: "+7 000 000-00-08", license: "Водитель категории CE", status: "На маршруте" },
+        { id: "DR-109", name: "Руслан Каримов", phone: "+7 000 000-00-09", license: "Водитель категории Е", status: "На маршруте" },
+        { id: "DR-110", name: "Бахтиёр Юсупов", phone: "+7 000 000-00-10", license: "Водитель категории CE", status: "На маршруте" },
+        { id: "DR-111", name: "Алишер Рахимов", phone: "+7 000 000-00-11", license: "Водитель категории Е", status: "Отдых" }
     ];
     const starterClients = [
         { id: "CL-201", name: "Вектор Маркет", contact: "Мария Соколова", email: "logistics@vector.example", phone: "+7 495 120-44-31", city: "Москва", orders: 28 },
         { id: "CL-202", name: "Северный склад", contact: "Илья Фомин", email: "supply@north.example", phone: "+7 812 302-14-08", city: "Санкт-Петербург", orders: 16 },
         { id: "CL-203", name: "ВолгаТорг", contact: "Елена Крылова", email: "delivery@volga.example", phone: "+7 843 221-09-50", city: "Казань", orders: 12 },
-        { id: "CL-204", name: "Городские продукты", contact: "Павел Романов", email: "cargo@city.example", phone: "+7 491 220-61-92", city: "Рязань", orders: 9 }
+        { id: "CL-204", name: "Городские продукты", contact: "Павел Романов", email: "cargo@city.example", phone: "+7 491 220-61-92", city: "Рязань", orders: 9 },
+        { id: "CL-205", name: "Silk Road Logistics", contact: "Дилшод Абдуллаев", email: "dispatch@silkroad.example", phone: "+7 000 000-02-05", city: "Ташкент", orders: 21 },
+        { id: "CL-206", name: "Восток Снаб", contact: "Ирина Касымова", email: "orders@vostok.example", phone: "+7 000 000-02-06", city: "Екатеринбург", orders: 14 },
+        { id: "CL-207", name: "Фергана Трейд", contact: "Нодира Рахматова", email: "cargo@fergana.example", phone: "+7 000 000-02-07", city: "Бухара", orders: 18 },
+        { id: "CL-208", name: "УралКомплект", contact: "Марат Садыков", email: "logistics@ural.example", phone: "+7 000 000-02-08", city: "Казань", orders: 11 }
     ];
     const truckPhotos = ["assets/trucks/truck-highway.jpg", "assets/trucks/truck-freight.jpg"];
     const cityCoordinates = {
@@ -109,6 +122,7 @@
     let tripDateTo = "";
     let currentTheme = loadThemePreference();
     document.documentElement.dataset.theme = currentTheme;
+    migrateStarterRecords();
 
     function loadThemePreference() {
         try {
@@ -204,6 +218,35 @@
         } catch (error) {
             console.error("Не удалось загрузить сохранённые рейсы.", error);
             return normalizeTrucks(starterTrucks);
+        }
+    }
+
+    function migrateStarterRecords() {
+        const seedVersion = "fleet-directory-2026-11";
+        try {
+            if (localStorage.getItem(storageKeys.demoDataVersion) === seedVersion) return;
+        } catch (error) {
+            console.error("Не удалось проверить версию демо-данных.", error);
+            showToast("Не удалось проверить демо-данные. Новые записи доступны только до перезагрузки.", true);
+            return;
+        }
+
+        const mergeMissing = (records, defaults) => [
+            ...records,
+            ...defaults.filter((item) => !records.some((record) => record.id === item.id)).map((item) => ({ ...item }))
+        ];
+        trucks = normalizeTrucks(mergeMissing(trucks, starterTrucks));
+        drivers = mergeMissing(drivers, starterDrivers);
+        clients = mergeMissing(clients, starterClients);
+
+        try {
+            localStorage.setItem(storageKeys.trucks, JSON.stringify(trucks));
+            localStorage.setItem(storageKeys.drivers, JSON.stringify(drivers));
+            localStorage.setItem(storageKeys.clients, JSON.stringify(clients));
+            localStorage.setItem(storageKeys.demoDataVersion, seedVersion);
+        } catch (error) {
+            console.error("Не удалось сохранить новые демо-записи.", error);
+            showToast("Новые машины, водители и клиенты показаны, но не сохранены в браузере.", true);
         }
     }
 
