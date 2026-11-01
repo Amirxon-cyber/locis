@@ -8,7 +8,8 @@
         drivers: "transline-demo-drivers",
         clients: "transline-demo-clients",
         company: "transline-demo-company",
-        activity: "transline-demo-activity"
+        activity: "transline-demo-activity",
+        theme: "transline-demo-theme"
     };
     const starterTrucks = [
         { id: "RF-204", plate: "А781МР 799", driver: "Сергей Козлов", from: "Москва", to: "Казань", location: "Трасса М-7, 42 км", status: "moving", eta: "14:30", progress: 68, x: 54, y: 48 },
@@ -78,6 +79,43 @@
     let activeTripFilter = "active";
     let tripDateFrom = "";
     let tripDateTo = "";
+    let currentTheme = loadThemePreference();
+    document.documentElement.dataset.theme = currentTheme;
+
+    function loadThemePreference() {
+        try {
+            return localStorage.getItem(storageKeys.theme) === "dark" ? "dark" : "light";
+        } catch (error) {
+            console.error("Не удалось загрузить настройку темы.", error);
+            return "light";
+        }
+    }
+
+    function setTheme(theme, notify = true) {
+        currentTheme = theme === "dark" ? "dark" : "light";
+        document.documentElement.dataset.theme = currentTheme;
+        const isDark = currentTheme === "dark";
+        const toggle = byId("themeToggle");
+        toggle.setAttribute("aria-pressed", String(isDark));
+        toggle.setAttribute("aria-label", isDark ? "Включить светлую тему" : "Включить тёмную тему");
+        toggle.title = isDark ? "Светлая тема" : "Тёмная тема";
+        toggle.innerHTML = isDark
+            ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>'
+            : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.1A8.5 8.5 0 0 1 8.9 3.8 8.6 8.6 0 1 0 20.2 15.1Z"/></svg>';
+        const settingsToggle = byId("settingsThemeToggle");
+        if (settingsToggle) {
+            settingsToggle.textContent = isDark ? "Переключить на светлую" : "Переключить на тёмную";
+            settingsToggle.setAttribute("aria-pressed", String(isDark));
+        }
+        try {
+            localStorage.setItem(storageKeys.theme, currentTheme);
+        } catch (error) {
+            console.error("Не удалось сохранить настройку темы.", error);
+            if (notify) showToast("Тема сменена, но не сохранена. Проверьте настройки хранения браузера.", true);
+            return;
+        }
+        if (notify) showToast(isDark ? "Включена тёмная тема." : "Включена светлая тема.");
+    }
 
     function loadCollection(key, defaults, validate) {
         try {
@@ -480,10 +518,11 @@
             return;
         }
         fleetMap = window.L.map("fleetMap", { scrollWheelZoom: false }).setView([56.3, 42.8], 5);
-        window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        window.L.tileLayer("https://tile.openstreetmap.de/{z}/{x}/{y}.png", {
             maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
         }).addTo(fleetMap);
+        byId("mapSourcePill").textContent = "OSM";
         byId("mapContainer").classList.add("has-map");
     }
 
@@ -809,6 +848,7 @@
         }
         return `${makePageHeader("Настройки", "Персонализируйте рабочее пространство и сохраните данные.")}
           <div class="settings-grid"><article class="panel settings-card"><div class="settings-title"><span class="settings-icon">⌂</span><span><strong>Рабочее пространство</strong><small>Основная информация о компании</small></span></div><form id="companyForm" class="settings-form"><label class="form-field"><span>Название компании</span><input id="settingsCompany" value="${escapeHTML(company)}" maxlength="60" required></label><button class="button button-primary" type="submit">Сохранить изменения</button></form></article>
+          <article class="panel settings-card"><div class="settings-title"><span class="settings-icon blue">◐</span><span><strong>Внешний вид</strong><small>Настройте интерфейс под себя</small></span></div><p class="settings-description">Выбранная тема сохранится в этом браузере и применится при следующем входе.</p><button class="button button-outline" id="settingsThemeToggle" data-action="toggle-theme" aria-pressed="${currentTheme === "dark"}">${currentTheme === "dark" ? "Переключить на светлую" : "Переключить на тёмную"}</button></article>
           <article class="panel settings-card"><div class="settings-title"><span class="settings-icon blue">⇩</span><span><strong>Данные и резервная копия</strong><small>Демо-данные хранятся в этом браузере</small></span></div><p class="settings-description">Сохраните копию рейсов, машин, водителей и клиентов в JSON-файле или сбросьте демонстрационные изменения.</p><div class="settings-actions"><button class="button button-outline" data-action="export-backup">Скачать копию</button><button class="button button-outline" data-action="import-backup">Восстановить из файла</button><button class="button button-outline danger-outline" data-action="reset-data">Сбросить изменения</button><input id="backupFile" type="file" accept=".json,application/json" hidden></div></article>
           <article class="panel settings-card"><div class="settings-title"><span class="settings-icon green">✓</span><span><strong>Подключение</strong><small>Статус текущей версии</small></span></div><div class="settings-info"><span>Режим работы</span><strong>Демо · локальное хранение</strong></div><div class="settings-info"><span>GPS-телематика</span><strong>Не подключена</strong></div><div class="settings-info"><span>Синхронизация команды</span><strong>Нужен сервер</strong></div></article></div>`;
     }
@@ -897,6 +937,7 @@
         if (action === "export-backup") return exportBackup();
         if (action === "import-backup") return byId("backupFile").click();
         if (action === "reset-data") return resetDemoData();
+        if (action === "toggle-theme") return setTheme(currentTheme === "dark" ? "light" : "dark");
     }
 
     function openTripModal() {
@@ -1310,6 +1351,7 @@
         if (readSavedUser()) logout();
         else showAuth("login");
     });
+    byId("themeToggle").addEventListener("click", () => setTheme(currentTheme === "dark" ? "light" : "dark"));
     byId("logoutButton").addEventListener("click", () => {
         if (readSavedUser()) logout();
         else showAuth("login");
@@ -1565,6 +1607,12 @@
             byId("sidebar").classList.remove("mobile-open");
         });
     });
+    document.querySelectorAll(".portal-shortcut").forEach((button) => {
+        button.addEventListener("click", () => {
+            document.querySelector(`.nav-link[data-page="${button.dataset.page}"]`).click();
+        });
+    });
+    byId("portalCreateTrip").addEventListener("click", openTripModal);
     byId("allRoutesButton").addEventListener("click", () => {
         document.querySelector('[data-section="Рейсы"]').click();
     });
@@ -1588,6 +1636,7 @@
         }
     });
 
+    setTheme(currentTheme, false);
     const savedUser = readSavedUser();
     if (savedUser) {
         setUser(savedUser);

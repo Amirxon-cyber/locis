@@ -124,6 +124,12 @@
                         id="currentSection">Обзор</strong></div>
                 <div class="topbar-right">
                     <div class="system-status"><i></i><span>Все системы работают</span></div>
+                    <button class="top-icon theme-toggle" id="themeToggle" type="button"
+                        aria-label="Включить тёмную тему" aria-pressed="false" title="Переключить тему">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M20.2 15.1A8.5 8.5 0 0 1 8.9 3.8 8.6 8.6 0 1 0 20.2 15.1Z" />
+                        </svg>
+                    </button>
                     <button class="top-icon" id="notificationsButton" aria-label="Уведомления" title="Уведомления">
                         <svg viewBox="0 0 24 24">
                             <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" />
@@ -138,11 +144,40 @@
 
             <div class="page-content">
                 <div id="overviewPage">
+                    <section class="portal-hero" aria-label="Логистический портал">
+                        <div class="portal-hero-copy">
+                            <p class="portal-eyebrow">ТРАНСПОРТНЫЙ ИНФОРМАЦИОННЫЙ ПОРТАЛ</p>
+                            <h1>Логистика под контролем —<br>от заявки до доставки</h1>
+                            <p>Планируйте перевозки, следите за автопарком и держите команду в курсе в одном месте.</p>
+                            <button class="button portal-hero-button" id="portalCreateTrip">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                                Создать перевозку
+                            </button>
+                        </div>
+                        <div class="portal-hero-art" role="img" aria-label="Грузовой автомобиль на маршруте"></div>
+                        <div class="portal-hero-badge"><span></span> Единое рабочее пространство</div>
+                    </section>
+                    <nav class="portal-shortcuts" aria-label="Разделы логистического портала">
+                        <button class="portal-shortcut" data-page="trips"><span
+                                class="portal-shortcut-icon">↗</span><span><strong>Перевозки</strong><small>Планирование
+                                    и статусы</small></span><b>→</b></button>
+                        <button class="portal-shortcut" data-page="fleet"><span
+                                class="portal-shortcut-icon blue">▰</span><span><strong>Автопарк</strong><small>Машины и
+                                    GPS-карта</small></span><b>→</b></button>
+                        <button class="portal-shortcut" data-page="drivers"><span
+                                class="portal-shortcut-icon green">♙</span><span><strong>Водители</strong><small>Команда
+                                    и назначения</small></span><b>→</b></button>
+                        <button class="portal-shortcut" data-page="clients"><span
+                                class="portal-shortcut-icon amber">⌂</span><span><strong>Клиенты</strong><small>Контакты
+                                    и заказы</small></span><b>→</b></button>
+                    </nav>
                     <section class="welcome-row">
                         <div>
                             <p class="eyebrow"><span class="eyebrow-dot"></span> <span id="todayDate"></span>
                             </p>
-                            <h1>Доброе утро, <span id="greetingName">Алексей</span> <span class="wave">✳</span></h1>
+                            <h1><span id="greetingName">Доброе утро, Алексей</span> <span class="wave">✳</span></h1>
                             <p class="welcome-subtitle">Ваша логистика под контролем. Вот что происходит сегодня.</p>
                         </div>
                         <div class="welcome-actions">
@@ -214,7 +249,7 @@
                                 <div>
                                     <div class="panel-title-row">
                                         <h2>Карта автопарка</h2><span class="live-pill map-source-pill"
-                                            id="mapSourcePill">OSM</span>
+                                            id="mapSourcePill">КАРТА</span>
                                     </div>
                                     <p>Местоположение транспорта на маршрутах</p>
                                 </div>
@@ -290,7 +325,8 @@
                                 <div class="map-legend"><span><i class="legend-dot moving"></i>В пути</span><span><i
                                             class="legend-dot delayed"></i>Задержка</span><span><i
                                             class="legend-dot stopped"></i>Стоянка</span></div>
-                                <span class="map-disclaimer" id="gpsDisclaimer">Линии — ориентир · демо-позиции примерные · GPS с устройства</span>
+                                <span class="map-disclaimer" id="gpsDisclaimer">Линии — ориентир · демо-позиции
+                                    примерные · GPS с устройства</span>
                             </div>
                         </article>
 
@@ -542,8 +578,3 @@
 </body>
 
 </html>
-
-
-
-
-<button>я гей?</button>

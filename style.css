@@ -2494,6 +2494,480 @@ svg {
     }
 }
 
+.portal-hero {
+    position: relative;
+    display: flex;
+    min-height: 214px;
+    align-items: center;
+    overflow: hidden;
+    margin: 0 0 14px;
+    border: 1px solid #d5e6f4;
+    border-radius: 15px;
+    padding: 27px 30px;
+    background: linear-gradient(112deg, #f1f8ff 0%, #e7f4ff 53%, #d7edfb 100%);
+    box-shadow: 0 12px 30px rgb(34 91 137 / 8%);
+}
+
+.portal-hero-copy {
+    position: relative;
+    z-index: 1;
+    width: min(58%, 560px);
+}
+
+.portal-eyebrow {
+    margin: 0 0 9px;
+    color: #5279a0;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+}
+
+.portal-hero h1 {
+    margin: 0;
+    color: #193956;
+    font-family: Manrope, sans-serif;
+    font-size: clamp(22px, 2.5vw, 31px);
+    font-weight: 800;
+    letter-spacing: -1.1px;
+    line-height: 1.2;
+}
+
+.portal-hero-copy>p:not(.portal-eyebrow) {
+    max-width: 420px;
+    margin: 9px 0 16px;
+    color: #5e7690;
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+.portal-hero-button {
+    min-height: 35px;
+    border: 0;
+    border-radius: 8px;
+    padding: 0 12px;
+    background: #3278b2;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.portal-hero-button:hover {
+    background: #25699f;
+}
+
+.portal-hero-button svg {
+    width: 14px;
+    height: 14px;
+}
+
+.portal-hero-art {
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: 48%;
+    background-image: linear-gradient(90deg, #eaf5ff 0%, rgb(234 245 255 / 62%) 16%, rgb(234 245 255 / 5%) 58%), url("assets/trucks/truck-highway.jpg");
+    background-position: center, center 54%;
+    background-size: cover;
+    clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.portal-hero-badge {
+    position: absolute;
+    right: 15px;
+    bottom: 13px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid rgb(255 255 255 / 75%);
+    border-radius: 20px;
+    padding: 7px 10px;
+    background: rgb(255 255 255 / 82%);
+    color: #46627c;
+    font-size: 8px;
+    font-weight: 650;
+    backdrop-filter: blur(8px);
+}
+
+.portal-hero-badge span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #36ad7e;
+    box-shadow: 0 0 0 3px rgb(54 173 126 / 14%);
+}
+
+.portal-shortcuts {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 19px;
+}
+
+.portal-shortcut {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 12px;
+    background: #fff;
+    color: var(--ink);
+    text-align: left;
+    box-shadow: var(--shadow);
+    transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+
+.portal-shortcut:hover {
+    transform: translateY(-2px);
+    border-color: #b9c9f8;
+    box-shadow: 0 8px 20px rgb(34 52 83 / 8%);
+}
+
+.portal-shortcut-icon {
+    display: grid;
+    width: 33px;
+    height: 33px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 9px;
+    background: #eef1ff;
+    color: #5671dc;
+    font-size: 17px;
+}
+
+.portal-shortcut-icon.blue {
+    background: #eaf4fc;
+    color: #4787b4;
+}
+
+.portal-shortcut-icon.green {
+    background: #eaf7f1;
+    color: #359372;
+}
+
+.portal-shortcut-icon.amber {
+    background: #fff4e5;
+    color: #c58b3d;
+}
+
+.portal-shortcut>span:nth-child(2) {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+}
+
+.portal-shortcut strong {
+    overflow: hidden;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.portal-shortcut small {
+    overflow: hidden;
+    color: #8995a8;
+    font-size: 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.portal-shortcut>b {
+    margin-left: auto;
+    color: #9aa5b4;
+    font-size: 12px;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --ink: #e4eaf3;
+    --muted: #9baac0;
+    --line: #2b3a50;
+    --canvas: #111a28;
+    --sidebar: #101927;
+    --shadow: 0 6px 22px rgb(0 0 0 / 18%);
+}
+
+:root[data-theme="dark"] body {
+    background: var(--canvas);
+    color: var(--ink);
+}
+
+:root[data-theme="dark"] .topbar {
+    border-color: var(--line);
+    background: rgb(20 30 45 / 94%);
+}
+
+:root[data-theme="dark"] .breadcrumbs strong,
+:root[data-theme="dark"] .metric-number strong,
+:root[data-theme="dark"] .panel-heading h2,
+:root[data-theme="dark"] .workspace-heading h1,
+:root[data-theme="dark"] .data-panel-head h2,
+:root[data-theme="dark"] .person-card h3,
+:root[data-theme="dark"] .modal h2,
+:root[data-theme="dark"] .settings-title strong,
+:root[data-theme="dark"] .page-stat-row article strong,
+:root[data-theme="dark"] .analytics-kpi strong,
+:root[data-theme="dark"] .finance-cards article strong {
+    color: #e5ebf5;
+}
+
+:root[data-theme="dark"] .top-icon,
+:root[data-theme="dark"] .small-icon-button,
+:root[data-theme="dark"] .metric-card,
+:root[data-theme="dark"] .panel,
+:root[data-theme="dark"] .page-stat-row article,
+:root[data-theme="dark"] .analytics-kpi,
+:root[data-theme="dark"] .finance-cards article,
+:root[data-theme="dark"] .person-card,
+:root[data-theme="dark"] .portal-shortcut,
+:root[data-theme="dark"] .modal,
+:root[data-theme="dark"] .auth-form-panel {
+    border-color: var(--line);
+    background: #192538;
+    color: var(--ink);
+}
+
+:root[data-theme="dark"] .topbar-right .top-icon:hover,
+:root[data-theme="dark"] .small-icon-button:hover {
+    background: #24344c;
+}
+
+:root[data-theme="dark"] .metric-heading,
+:root[data-theme="dark"] .panel-heading p,
+:root[data-theme="dark"] .data-panel-head p,
+:root[data-theme="dark"] .workspace-heading>div:first-child>p:last-child,
+:root[data-theme="dark"] .system-status,
+:root[data-theme="dark"] .breadcrumbs,
+:root[data-theme="dark"] .person-card>p,
+:root[data-theme="dark"] .settings-description,
+:root[data-theme="dark"] .settings-title small,
+:root[data-theme="dark"] .metric-caption,
+:root[data-theme="dark"] .metric-change,
+:root[data-theme="dark"] .metric-foot,
+:root[data-theme="dark"] .page-footer,
+:root[data-theme="dark"] .modal-description,
+:root[data-theme="dark"] .auth-secure {
+    color: #9aaac0;
+}
+
+:root[data-theme="dark"] .data-table thead,
+:root[data-theme="dark"] .auth-tabs {
+    background: #152134;
+}
+
+:root[data-theme="dark"] .data-table th {
+    color: #99a9bf;
+}
+
+:root[data-theme="dark"] .data-table td {
+    border-color: #29394f;
+    color: #bdc9d9;
+}
+
+:root[data-theme="dark"] .data-table td>strong,
+:root[data-theme="dark"] .route-city,
+:root[data-theme="dark"] .person-detail strong,
+:root[data-theme="dark"] .settings-info strong,
+:root[data-theme="dark"] .detail-row strong,
+:root[data-theme="dark"] .auth-form-panel .form-field>span {
+    color: #d7e0ed;
+}
+
+:root[data-theme="dark"] .data-table td>small,
+:root[data-theme="dark"] .person-detail span,
+:root[data-theme="dark"] .settings-info span,
+:root[data-theme="dark"] .detail-row span {
+    color: #98a8bd;
+}
+
+:root[data-theme="dark"] .data-table tbody tr:hover {
+    background: #202f44;
+}
+
+:root[data-theme="dark"] .form-field>span {
+    color: #bbc8d9;
+}
+
+:root[data-theme="dark"] .form-field input,
+:root[data-theme="dark"] .form-field select,
+:root[data-theme="dark"] .gps-manual-form input,
+:root[data-theme="dark"] .page-search input,
+:root[data-theme="dark"] .date-filter input {
+    border-color: #36465d;
+    background: #111c2c;
+    color: #e5ebf5;
+    color-scheme: dark;
+}
+
+:root[data-theme="dark"] .form-field input::placeholder,
+:root[data-theme="dark"] .page-search input::placeholder {
+    color: #7788a0;
+}
+
+:root[data-theme="dark"] .modal-close,
+:root[data-theme="dark"] .segmented-control {
+    border-color: var(--line);
+    background: #202e42;
+    color: #b8c5d6;
+}
+
+:root[data-theme="dark"] .segment.active,
+:root[data-theme="dark"] .auth-tab.active {
+    background: #2b3d58;
+    color: #dce5f4;
+}
+
+:root[data-theme="dark"] .auth-route-card,
+:root[data-theme="dark"] .demo-note,
+:root[data-theme="dark"] .gps-modal-hint,
+:root[data-theme="dark"] .table-total {
+    border-color: #34445b;
+    background: #202e42;
+    color: #c0ccdc;
+}
+
+:root[data-theme="dark"] .person-detail,
+:root[data-theme="dark"] .person-actions,
+:root[data-theme="dark"] .settings-info,
+:root[data-theme="dark"] .detail-row {
+    border-color: #2b3a50;
+}
+
+:root[data-theme="dark"] .portal-hero {
+    border-color: #284868;
+    background: linear-gradient(110deg, #1a3855 0%, #20496d 55%, #1d5b79 100%);
+}
+
+:root[data-theme="dark"] .portal-hero-art {
+    background-image: linear-gradient(90deg, #1d405f 0%, rgb(29 64 95 / 70%) 16%, rgb(29 64 95 / 12%) 58%), url("assets/trucks/truck-highway.jpg");
+}
+
+:root[data-theme="dark"] .portal-eyebrow {
+    color: #b7d5ed;
+}
+
+:root[data-theme="dark"] .portal-hero h1 {
+    color: #f0f6fc;
+}
+
+:root[data-theme="dark"] .portal-hero-copy>p:not(.portal-eyebrow) {
+    color: #c1d3e2;
+}
+
+:root[data-theme="dark"] .portal-hero-badge {
+    border-color: rgb(255 255 255 / 12%);
+    background: rgb(17 33 49 / 80%);
+    color: #d4dfeb;
+}
+
+:root[data-theme="dark"] .portal-shortcut:hover {
+    border-color: #526c93;
+    background: #203047;
+}
+
+:root[data-theme="dark"] .portal-shortcut small,
+:root[data-theme="dark"] .portal-shortcut>b {
+    color: #9aabc1;
+}
+
+:root[data-theme="dark"] .metric-icon.blue,
+:root[data-theme="dark"] .settings-icon.blue {
+    background: #26375a;
+}
+
+:root[data-theme="dark"] .metric-icon.mint,
+:root[data-theme="dark"] .settings-icon.green {
+    background: #1d403b;
+}
+
+:root[data-theme="dark"] .metric-icon.amber,
+:root[data-theme="dark"] .settings-icon {
+    background: #443824;
+}
+
+:root[data-theme="dark"] .metric-icon.violet {
+    background: #362d50;
+}
+
+:root[data-theme="dark"] .table-status,
+:root[data-theme="dark"] .person-status,
+:root[data-theme="dark"] .live-pill {
+    filter: brightness(.82) saturate(.9);
+}
+
+:root[data-theme="dark"] .leaflet-control-zoom a,
+:root[data-theme="dark"] .leaflet-control-layers,
+:root[data-theme="dark"] .leaflet-popup-content-wrapper,
+:root[data-theme="dark"] .leaflet-popup-tip {
+    border-color: #394b61;
+    background: #192538;
+    color: #e4eaf3;
+}
+
+@media (max-width: 760px) {
+    .portal-shortcuts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .portal-hero {
+        min-height: 200px;
+        padding: 22px 20px;
+    }
+
+    .portal-hero-copy {
+        width: 68%;
+    }
+}
+
+@media (max-width: 480px) {
+    .portal-hero {
+        min-height: 230px;
+        align-items: flex-start;
+        padding: 22px 18px;
+    }
+
+    .portal-hero-copy {
+        width: 100%;
+    }
+
+    .portal-hero h1 {
+        max-width: 260px;
+        font-size: 22px;
+    }
+
+    .portal-hero-copy>p:not(.portal-eyebrow) {
+        max-width: 245px;
+        font-size: 9px;
+    }
+
+    .portal-hero-art {
+        top: auto;
+        width: 68%;
+        height: 75px;
+        opacity: .7;
+    }
+
+    .portal-hero-badge {
+        right: 9px;
+        bottom: 8px;
+        font-size: 7px;
+    }
+
+    .portal-shortcuts {
+        gap: 7px;
+    }
+
+    .portal-shortcut {
+        gap: 7px;
+        padding: 9px 8px;
+    }
+
+    .portal-shortcut-icon {
+        width: 29px;
+        height: 29px;
+    }
+}
+
 .workspace-page[hidden] {
     display: none;
 }
@@ -3373,10 +3847,7 @@ svg {
     border-color: #d3ecdf;
     background: #f0faf4;
     color: #347b5f;
-}
 
-.gps-status.is-pending {
-    border-color: #dfe6ff;
     background: #f4f6ff;
     color: #506bdd;
 }
