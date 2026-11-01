@@ -34,12 +34,31 @@
         { id: "CL-203", name: "ВолгаТорг", contact: "Елена Крылова", email: "delivery@volga.example", phone: "+7 843 221-09-50", city: "Казань", orders: 12 },
         { id: "CL-204", name: "Городские продукты", contact: "Павел Романов", email: "cargo@city.example", phone: "+7 491 220-61-92", city: "Рязань", orders: 9 }
     ];
+    const truckPhotos = ["assets/trucks/truck-highway.jpg", "assets/trucks/truck-freight.jpg"];
+    const cityCoordinates = {
+        "москва": [55.7558, 37.6173],
+        "тверь": [56.8587, 35.9176],
+        "казань": [55.7961, 49.1064],
+        "нижний новгород": [56.2965, 43.9361],
+        "самара": [53.1959, 50.1002],
+        "смоленск": [54.7826, 32.0453],
+        "рязань": [54.6292, 39.7364],
+        "санкт-петербург": [59.9311, 30.3609],
+        "ярославль": [57.6261, 39.8845],
+        "владимир": [56.129, 40.407],
+        "воронеж": [51.6608, 39.2003],
+        "екатеринбург": [56.8389, 60.6057]
+    };
+    const truckMarkerSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7"/><circle cx="7.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg>';
 
     const byId = (id) => document.getElementById(id);
     const fleetList = byId("fleetList");
     const mapMarkers = byId("mapMarkers");
     const routesTableBody = byId("routesTableBody");
     const toast = byId("toast");
+    let fleetMap = null;
+    let leafletMarkers = new Map();
+    let leafletRoutes = new Map();
     let trucks = loadTrucks();
     let drivers = loadCollection(storageKeys.drivers, starterDrivers, (item) => item && ["id", "name", "phone", "license", "status"].every((key) => typeof item[key] === "string"));
     let clients = loadCollection(storageKeys.clients, starterClients, (item) => item && ["id", "name", "contact", "email", "phone", "city"].every((key) => typeof item[key] === "string") && Number.isFinite(item.orders));
@@ -134,7 +153,9 @@
         return item && typeof item === "object"
             && ["id", "plate", "driver", "from", "to", "location", "status", "eta"].every((key) => typeof item[key] === "string")
             && ["moving", "delayed", "stopped", "delivered", "cancelled"].includes(item.status)
-            && Number.isFinite(item.progress) && Number.isFinite(item.x) && Number.isFinite(item.y);
+            && Number.isFinite(item.progress) && Number.isFinite(item.x) && Number.isFinite(item.y)
+            && (item.gps === undefined || (item.gps && Number.isFinite(item.gps.latitude) && Number.isFinite(item.gps.longitude)
+                && Number.isFinite(item.gps.accuracy) && Number.isFinite(item.gps.updatedAt)));
     }
 
     function saveTrucks() {
@@ -189,7 +210,11 @@
             row.dataset.truckId = truck.id;
             const icon = document.createElement("span");
             icon.className = `truck-avatar ${truck.status}`;
-            icon.append(truckIcon());
+            const photo = document.createElement("img");
+            photo.src = truckPhoto(truck);
+            photo.alt = `Фура ${truck.plate}`;
+            photo.loading = "lazy";
+            icon.append(photo);
 
             const copy = document.createElement("span");
             copy.className = "truck-copy";
@@ -220,6 +245,66 @@
 
     function renderMarkers() {
         mapMarkers.replaceChildren();
+        if (fleetMap) {
+            const currentIds = new Set();
+            trucks.forEach((truck) => {
+                const coordinates = getTruckCoordinates(truck);
+                const position = [coordinates.latitude, coordinates.longitude];
+                const routePoints = [getCityCoordinates(truck.from), getCityCoordinates(truck.to)];
+                const routeColor = truck.status === "delayed" ? "#d69a47" : truck.status === "cancelled" ? "#c76b65" : "#5273ed";
+                let route = leafletRoutes.get(truck.id);
+                if (!route) {
+                    route = window.L.polyline(routePoints, {
+                        color: routeColor,
+                        weight: 3,
+                        opacity: 0.48,
+                        dashArray: "6 7",
+                        lineCap: "round"
+                    }).addTo(fleetMap);
+                    leafletRoutes.set(truck.id, route);
+                } else {
+                    route.setLatLngs(routePoints);
+                    route.setStyle({ color: routeColor });
+                }
+                let marker = leafletMarkers.get(truck.id);
+                if (!marker) {
+                    marker = window.L.marker(position, {
+                        icon: window.L.divIcon({
+                            className: "",
+                            html: `<span class="truck-map-marker ${escapeHTML(truck.status)}${truck.id === selectedTruckId ? " selected" : ""}">${truckMarkerSvg}</span>`,
+                            iconSize: [38, 38],
+                            iconAnchor: [19, 19]
+                        })
+                    }).addTo(fleetMap);
+                    marker.on("click", () => selectTruck(truck.id));
+                    leafletMarkers.set(truck.id, marker);
+                } else {
+                    marker.setLatLng(position);
+                    marker.setIcon(window.L.divIcon({
+                        className: "",
+                        html: `<span class="truck-map-marker ${escapeHTML(truck.status)}${truck.id === selectedTruckId ? " selected" : ""}">${truckMarkerSvg}</span>`,
+                        iconSize: [38, 38],
+                        iconAnchor: [19, 19]
+                    }));
+                }
+                const positionLabel = coordinates.isGps ? "GPS устройства" : "примерная позиция";
+                marker.bindPopup(`<div class="map-popup"><strong>${escapeHTML(truck.id)} · ${escapeHTML(truck.plate)}</strong><span>${escapeHTML(truck.from)} → ${escapeHTML(truck.to)}</span><span>${escapeHTML(truck.driver)} · ${escapeHTML(statusLabels[truck.status])}</span><small>${positionLabel}: ${coordinates.latitude.toFixed(5)}, ${coordinates.longitude.toFixed(5)}</small></div>`);
+                currentIds.add(truck.id);
+            });
+            leafletMarkers.forEach((marker, id) => {
+                if (!currentIds.has(id)) {
+                    fleetMap.removeLayer(marker);
+                    leafletMarkers.delete(id);
+                }
+            });
+            leafletRoutes.forEach((route, id) => {
+                if (!currentIds.has(id)) {
+                    fleetMap.removeLayer(route);
+                    leafletRoutes.delete(id);
+                }
+            });
+            return;
+        }
         trucks.forEach((truck) => {
             const marker = document.createElement("button");
             marker.type = "button";
@@ -245,6 +330,13 @@
     function selectTruck(id) {
         selectedTruckId = id;
         renderFleet();
+        const truck = trucks.find((item) => item.id === id);
+        if (fleetMap && truck) {
+            const coordinates = getTruckCoordinates(truck);
+            fleetMap.setView([coordinates.latitude, coordinates.longitude], Math.max(fleetMap.getZoom(), coordinates.isGps ? 10 : 6));
+            const marker = leafletMarkers.get(id);
+            if (marker) marker.openPopup();
+        }
     }
 
     function renderRoutes() {
@@ -357,6 +449,42 @@
         return `${date.getFullYear()}-${month}-${day}`;
     }
 
+    function truckPhoto(truck) {
+        const number = Number(truck.id.match(/\d+/)?.[0]) || 0;
+        return truckPhotos[number % truckPhotos.length];
+    }
+
+    function getTruckCoordinates(truck) {
+        if (truck.gps && Number.isFinite(truck.gps.latitude) && Number.isFinite(truck.gps.longitude)) {
+            return { latitude: truck.gps.latitude, longitude: truck.gps.longitude, isGps: true };
+        }
+        const from = getCityCoordinates(truck.from);
+        const to = getCityCoordinates(truck.to, from);
+        const progress = Math.max(0, Math.min(100, Number(truck.progress) || 0)) / 100;
+        return {
+            latitude: from[0] + (to[0] - from[0]) * progress,
+            longitude: from[1] + (to[1] - from[1]) * progress,
+            isGps: false
+        };
+    }
+
+    function getCityCoordinates(city, fallback = cityCoordinates["москва"]) {
+        return cityCoordinates[String(city || "").trim().toLocaleLowerCase("ru")] || fallback;
+    }
+
+    function initializeFleetMap() {
+        if (!window.L) {
+            byId("mapSourcePill").textContent = "Карта";
+            return;
+        }
+        fleetMap = window.L.map("fleetMap", { scrollWheelZoom: false }).setView([56.3, 42.8], 5);
+        window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+        }).addTo(fleetMap);
+        byId("mapContainer").classList.add("has-map");
+    }
+
     function relativeTime(timestamp) {
         const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60_000));
         if (minutes < 1) return "только что";
@@ -405,12 +533,15 @@
     }
 
     function showTruckDetails(truck) {
+        const coordinates = getTruckCoordinates(truck);
         byId("detailsTitle").textContent = `${truck.id} · ${truck.plate}`;
         byId("detailsSubtitle").textContent = `${truck.from} → ${truck.to}`;
+        byId("truckDetailsPhoto").innerHTML = `<img src="${truckPhoto(truck)}" alt="Фура ${escapeHTML(truck.plate)}">`;
         const rows = [
             ["Статус", statusLabels[truck.status]],
             ["Водитель", truck.driver],
             ["Местоположение", truck.location],
+            [coordinates.isGps ? "GPS устройства" : "Примерные координаты", `${coordinates.latitude.toFixed(5)}, ${coordinates.longitude.toFixed(5)}${truck.gps?.accuracy ? ` · точность ${Math.round(truck.gps.accuracy)} м` : ""}`],
             ["Ожидаемое прибытие", truck.eta],
             ["Прогресс рейса", `${truck.progress}%`],
             ["Клиент", truck.client || "Не указан"],
@@ -432,7 +563,70 @@
             closeModal(byId("truckDetailsModal"));
             openRecordModal("truck", truck.id);
         };
+        byId("locateSelectedTruck").onclick = () => captureTruckGps(truck.id);
+        byId("resetTruckGps").hidden = !truck.gps;
+        byId("resetTruckGps").onclick = () => resetTruckGps(truck.id);
         openModal("truckDetailsModal");
+    }
+
+    function captureTruckGps(id) {
+        const truck = trucks.find((item) => item.id === id);
+        if (!truck) {
+            showToast("Сначала выберите машину.", true);
+            return;
+        }
+        if (!navigator.geolocation) {
+            showToast("Браузер не поддерживает геолокацию.", true);
+            return;
+        }
+        if (!window.isSecureContext && location.hostname !== "localhost") {
+            showToast("GPS доступен через HTTPS или localhost. Откройте сайт в защищённом соединении.", true);
+            return;
+        }
+        const detailsAreOpen = !byId("truckDetailsModal").hidden;
+        showToast("Запрашиваю GPS этого устройства. Разрешите доступ к местоположению.");
+        navigator.geolocation.getCurrentPosition(({ coords }) => {
+            const gps = {
+                latitude: coords.latitude,
+                longitude: coords.longitude,
+                accuracy: coords.accuracy,
+                updatedAt: Date.now()
+            };
+            trucks = trucks.map((item) => item.id === id
+                ? { ...item, gps, location: `GPS устройства · ${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}` }
+                : item);
+            const updatedTruck = trucks.find((item) => item.id === id);
+            saveTrucks();
+            renderFleet();
+            renderRoutes();
+            addActivity("Получены GPS-координаты", `${id} · точность ${Math.round(gps.accuracy)} м`, "created");
+            byId("lastUpdated").textContent = "только что";
+            if (detailsAreOpen) showTruckDetails(updatedTruck);
+            if (fleetMap) fleetMap.setView([gps.latitude, gps.longitude], 12);
+            showToast(`GPS сохранён для ${id} · точность около ${Math.round(gps.accuracy)} м.`);
+        }, (error) => {
+            const messages = {
+                1: "Нет разрешения на геолокацию. Разрешите доступ к GPS в настройках браузера.",
+                2: "Устройство не смогло определить местоположение. Проверьте GPS и попробуйте снова.",
+                3: "GPS-запрос занял слишком много времени. Попробуйте ещё раз."
+            };
+            showToast(messages[error.code] || "Не удалось получить GPS. Проверьте разрешение браузера.", true);
+        }, { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 });
+    }
+
+    function resetTruckGps(id) {
+        const truck = trucks.find((item) => item.id === id);
+        if (!truck?.gps) return;
+        trucks = trucks.map((item) => item.id === id
+            ? { ...item, gps: undefined, location: `${item.from} → ${item.to} · демо-позиция` }
+            : item);
+        const updatedTruck = trucks.find((item) => item.id === id);
+        saveTrucks();
+        renderFleet();
+        renderRoutes();
+        addActivity("GPS-привязка сброшена", id, "warning");
+        showTruckDetails(updatedTruck);
+        showToast(`Для ${id} восстановлена примерная демо-позиция.`);
     }
 
     function makePageHeader(title, description, actionLabel = "", action = "") {
@@ -441,7 +635,7 @@
 
     function renderFleetPage() {
         const rows = trucks.map((truck) => `<tr data-status="${escapeHTML(truck.status)}" data-date="${formatDateInput(truck.createdAt)}">
-            <td><strong>${escapeHTML(truck.id)}</strong><small>${escapeHTML(truck.plate)}</small></td>
+            <td><div class="fleet-table-vehicle"><img src="${truckPhoto(truck)}" alt="Фура ${escapeHTML(truck.plate)}" loading="lazy"><span><strong>${escapeHTML(truck.id)}</strong><small>${escapeHTML(truck.plate)}</small></span></div></td>
             <td>${escapeHTML(truck.driver)}</td><td>${escapeHTML(truck.from)} → ${escapeHTML(truck.to)}</td>
             <td><span class="table-status ${escapeHTML(truck.status)}">${escapeHTML(statusLabels[truck.status])}</span></td>
             <td>${escapeHTML(truck.location)}</td>
@@ -453,7 +647,7 @@
     }
 
     function renderTripsPage() {
-        const rows = trucks.map((truck) => `<tr data-status="${escapeHTML(truck.status)}" data-date="${new Date(truck.createdAt).toISOString().slice(0, 10)}">
+        const rows = trucks.map((truck) => `<tr data-status="${escapeHTML(truck.status)}" data-date="${formatDateInput(truck.createdAt)}">
             <td><strong>${escapeHTML(truck.id)}</strong><small>${escapeHTML(truck.plate)}</small></td>
             <td><span class="route-city">${escapeHTML(truck.from)} <b>→</b> ${escapeHTML(truck.to)}</span><small>${escapeHTML(truck.location)}</small></td>
             <td>${escapeHTML(truck.driver)}</td><td>${escapeHTML(truck.eta)}</td>
@@ -1057,6 +1251,7 @@
     function showDashboard() {
         byId("authScreen").hidden = true;
         byId("dashboard").hidden = false;
+        window.setTimeout(() => fleetMap?.invalidateSize(), 50);
     }
 
     byId("registerTab").addEventListener("click", () => setAuthTab("register"));
@@ -1253,9 +1448,14 @@
     });
     byId("zoomMapButton").addEventListener("click", (event) => {
         const zoomed = byId("mapContainer").classList.toggle("is-zoomed");
+        if (fleetMap) {
+            if (zoomed) fleetMap.zoomIn();
+            else fleetMap.zoomOut();
+        }
         event.currentTarget.setAttribute("aria-label", zoomed ? "Уменьшить карту" : "Увеличить карту");
         event.currentTarget.title = zoomed ? "Уменьшить карту" : "Увеличить карту";
     });
+    byId("locateDeviceButton").addEventListener("click", () => captureTruckGps(selectedTruckId));
     byId("truckDetailsButton").addEventListener("click", () => {
         const truck = trucks.find((item) => item.id === selectedTruckId);
         if (!truck) {
@@ -1305,6 +1505,7 @@
         showAuth("register");
     }
     refreshGreeting();
+    initializeFleetMap();
     updateMetrics();
     renderFleet();
     renderRoutes();

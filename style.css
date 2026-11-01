@@ -770,6 +770,111 @@ svg {
     isolation: isolate;
 }
 
+.leaflet-map {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    display: none;
+    background: #e7edf0;
+}
+
+.map-container.has-map .leaflet-map {
+    display: block;
+}
+
+.map-container.has-map .map-art,
+.map-container.has-map .map-markers {
+    display: none;
+}
+
+.map-container.has-map .map-legend,
+.map-container.has-map .map-disclaimer {
+    z-index: 450;
+}
+
+.map-container.is-zoomed .leaflet-map .leaflet-control-zoom {
+    box-shadow: 0 2px 10px rgb(31 47 77 / 20%);
+}
+
+.leaflet-control-attribution {
+    font-size: 8px !important;
+}
+
+.map-popup {
+    display: grid;
+    min-width: 190px;
+    gap: 5px;
+    color: #536176;
+    font: 12px "DM Sans", sans-serif;
+}
+
+.map-popup strong {
+    color: #243248;
+    font-size: 13px;
+}
+
+.map-popup small {
+    color: #7c8aa0;
+}
+
+.truck-map-marker {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 2px solid white;
+    border-radius: 12px;
+    background: #5273ed;
+    color: white;
+    box-shadow: 0 3px 12px rgb(31 47 77 / 30%);
+    transition: transform .15s ease;
+}
+
+.truck-map-marker svg {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.truck-map-marker.delayed {
+    background: #d69a47;
+}
+
+.truck-map-marker.selected {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 4px rgb(82 115 237 / 20%), 0 3px 12px rgb(31 47 77 / 30%);
+}
+
+.truck-map-marker.stopped,
+.truck-map-marker.delivered {
+    background: #8996a9;
+}
+
+.truck-map-marker.cancelled {
+    background: #c76b65;
+}
+
+.gps-button {
+    min-height: 30px;
+    border: 1px solid #dfe6ff;
+    border-radius: 7px;
+    padding: 0 9px;
+    background: #f3f5ff;
+    color: #506bdd;
+    font: inherit;
+    font-size: 8px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.gps-button:hover {
+    background: #e9edff;
+}
+
 .map-art {
     display: block;
     width: 100%;
@@ -823,6 +928,10 @@ svg {
 
 .truck-marker.stopped {
     background: #8996a9;
+}
+
+.truck-marker.cancelled {
+    background: #c76b65;
 }
 
 .map-legend {
@@ -1002,9 +1111,16 @@ svg {
     height: 32px;
     flex: 0 0 auto;
     place-items: center;
+    overflow: hidden;
     border-radius: 9px;
     background: #edf1ff;
     color: #5571e5;
+}
+
+.truck-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .truck-avatar.delayed {
@@ -2657,6 +2773,25 @@ svg {
     font-size: 10px !important;
 }
 
+.fleet-table-vehicle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.fleet-table-vehicle img {
+    width: 48px;
+    height: 36px;
+    flex: 0 0 auto;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.fleet-table-vehicle>span {
+    display: grid;
+    gap: 3px;
+}
+
 .route-city {
     color: #44546b;
     font-size: 9px;
@@ -3198,10 +3333,43 @@ svg {
     width: min(440px, 100%);
 }
 
+.truck-detail-photo {
+    height: 160px;
+    overflow: hidden;
+    border-radius: 11px;
+    background: #edf1f5;
+}
+
+.truck-detail-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .truck-details-list {
     display: grid;
     margin: 14px 0 7px;
     border-top: 1px solid #edf0f5;
+}
+
+.gps-modal-button {
+    width: 100%;
+    justify-content: center;
+    margin-top: 9px;
+}
+
+.gps-modal-hint {
+    margin: 8px 0 0;
+    color: #8995a5;
+    font-size: 9px;
+    line-height: 1.55;
+    text-align: center;
+}
+
+.gps-reset-button {
+    display: block;
+    margin: 7px auto 0;
+    font-size: 9px;
 }
 
 .detail-row {

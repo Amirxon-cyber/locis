@@ -11,6 +11,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -211,7 +213,8 @@
                             <div class="panel-heading">
                                 <div>
                                     <div class="panel-title-row">
-                                        <h2>Карта автопарка</h2><span class="live-pill"><i></i> LIVE</span>
+                                        <h2>Карта автопарка</h2><span class="live-pill map-source-pill"
+                                            id="mapSourcePill">OSM</span>
                                     </div>
                                     <p>Местоположение транспорта на маршрутах</p>
                                 </div>
@@ -221,9 +224,13 @@
                                             viewBox="0 0 24 24">
                                             <circle cx="10.8" cy="10.8" r="6.8" />
                                             <path d="m16 16 4 4M10.8 7.5v6.6M7.5 10.8h6.6" />
-                                        </svg></button></div>
+                                        </svg></button><button class="gps-button" id="locateDeviceButton" type="button"
+                                        title="Сохранить координаты этого устройства для выбранной машины">⌖
+                                        GPS</button></div>
                             </div>
                             <div class="map-container" id="mapContainer">
+                                <div class="leaflet-map" id="fleetMap" aria-label="Интерактивная карта OpenStreetMap">
+                                </div>
                                 <svg class="map-art" viewBox="0 0 900 470" preserveAspectRatio="xMidYMid slice"
                                     role="img" aria-label="Схематичная карта маршрутов в европейской части России">
                                     <defs>
@@ -283,7 +290,7 @@
                                 <div class="map-legend"><span><i class="legend-dot moving"></i>В пути</span><span><i
                                             class="legend-dot delayed"></i>Задержка</span><span><i
                                             class="legend-dot stopped"></i>Стоянка</span></div>
-                                <span class="map-disclaimer">Демо-карта · координаты примерные</span>
+                                <span class="map-disclaimer" id="gpsDisclaimer">Линии — ориентир · демо-позиции примерные · GPS с устройства</span>
                             </div>
                         </article>
 
@@ -354,8 +361,8 @@
                     </section>
                 </div>
                 <section id="workspacePage" class="workspace-page" hidden></section>
-                <footer class="page-footer"><span>© 2026 ТрансЛайн</span><span><i></i> Демо-режим · данные не подключены
-                        к GPS</span></footer>
+                <footer class="page-footer"><span>© 2026 ТрансЛайн</span><span><i></i> Демо-режим · GPS можно обновить
+                        с устройства водителя</span></footer>
             </div>
         </main>
     </div>
@@ -510,7 +517,14 @@
                     <p class="modal-eyebrow">КАРТОЧКА ТРАНСПОРТА</p>
                     <h2 id="detailsTitle">Данные машины</h2>
                     <p class="modal-description" id="detailsSubtitle"></p>
+                    <div class="truck-detail-photo" id="truckDetailsPhoto"></div>
                     <div class="truck-details-list" id="truckDetailsList"></div>
+                    <button class="button button-outline gps-modal-button" id="locateSelectedTruck" type="button">⌖
+                        Зафиксировать GPS этого устройства</button>
+                    <button class="text-button gps-reset-button" id="resetTruckGps" type="button" hidden>Вернуть
+                        примерную позицию</button>
+                    <p class="gps-modal-hint">Запросите геопозицию на телефоне водителя. Для постоянного трекинга нужен
+                        GPS-трекер и сервер.</p>
                     <button class="button button-primary modal-submit" id="editSelectedTruck" type="button">Изменить
                         данные <span>→</span></button>
                 </section>
@@ -522,6 +536,8 @@
         </section>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="script.js" defer></script>
 </body>
 
